@@ -31,6 +31,7 @@ export interface IStorage {
   getAllContents(): Promise<Content[]>;
   getContentsByType(type: string): Promise<Content[]>;
   createContent(content: InsertContent): Promise<Content>;
+  deleteContent(id: number): Promise<boolean>;
   
   // Memory operations
   getMemory(userId: string): Promise<Memory | undefined>;
@@ -188,6 +189,12 @@ export class MemStorage implements IStorage {
     this.contents.push(content);
     return content;
   }
+  
+  async deleteContent(id: number): Promise<boolean> {
+    const initialLength = this.contents.length;
+    this.contents = this.contents.filter(content => content.id !== id);
+    return initialLength > this.contents.length;
+  }
 
   // Memory operations
   async getMemory(userId: string): Promise<Memory | undefined> {
@@ -321,6 +328,15 @@ export class DatabaseStorage implements IStorage {
   async createContent(insertContent: InsertContent): Promise<Content> {
     const [content] = await db.insert(contents).values(insertContent).returning();
     return content;
+  }
+  
+  async deleteContent(id: number): Promise<boolean> {
+    const deleted = await db
+      .delete(contents)
+      .where(eq(contents.id, id))
+      .returning({ id: contents.id });
+    
+    return deleted.length > 0;
   }
 
   // Memory operations

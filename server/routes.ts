@@ -264,6 +264,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   });
+  
+  // Endpoint to delete a content entry
+  app.delete("/api/contents/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid content ID" });
+      }
+      
+      const success = await storage.deleteContent(id);
+      if (success) {
+        res.json({ success: true, message: "Content deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Content not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete content" });
+    }
+  });
 
   // Validate admin credentials
   app.post("/api/auth/admin", (req: Request, res: Response) => {
