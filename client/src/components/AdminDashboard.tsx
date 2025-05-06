@@ -4,6 +4,7 @@ import { Memory, Setting, Content, Message } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const AdminDashboard: React.FC = () => {
   const [memories, setMemories] = useState<Memory[]>([]);
@@ -14,6 +15,9 @@ const AdminDashboard: React.FC = () => {
   const [contentType, setContentType] = useState<string>('microblog');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('personality');
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [currentSetting, setCurrentSetting] = useState<Setting | null>(null);
   const { toast } = useToast();
 
   // Form states
@@ -259,6 +263,82 @@ const AdminDashboard: React.FC = () => {
       toast({
         title: "Error",
         description: "Failed to create memory",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Open the edit dialog for a setting
+  const openEditDialog = (setting: Setting) => {
+    setCurrentSetting(setting);
+    setFormData({
+      ...formData,
+      [`edit_${setting.key}`]: setting.value
+    });
+    setEditDialogOpen(true);
+  };
+
+  // Handle the edit of a setting
+  const handleEditSetting = async () => {
+    if (!currentSetting) return;
+    
+    try {
+      const response = await apiRequest('PATCH', `/api/settings/${currentSetting.key}`, {
+        value: formData[`edit_${currentSetting.key}` as keyof typeof formData] as string
+      });
+      
+      const updatedSetting = await response.json();
+      
+      // Update local state
+      setSettings(settings.map(s => 
+        s.key === currentSetting.key ? updatedSetting : s
+      ));
+      
+      toast({
+        title: "Success",
+        description: `Guideline "${currentSetting.key}" updated successfully`,
+      });
+      
+      setEditDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update guideline",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Open the delete dialog for a setting
+  const openDeleteDialog = (setting: Setting) => {
+    setCurrentSetting(setting);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle the deletion of a setting
+  const handleDeleteSetting = async () => {
+    if (!currentSetting) return;
+    
+    try {
+      const response = await apiRequest('DELETE', `/api/settings/${currentSetting.key}`, undefined);
+      
+      if (response.ok) {
+        // Update local state
+        setSettings(settings.filter(s => s.key !== currentSetting.key));
+        
+        toast({
+          title: "Success",
+          description: `Guideline "${currentSetting.key}" deleted successfully`,
+        });
+      } else {
+        throw new Error('Failed to delete');
+      }
+      
+      setDeleteDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete guideline",
         variant: "destructive",
       });
     }

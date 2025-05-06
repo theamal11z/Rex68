@@ -121,6 +121,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update setting" });
     }
   });
+  
+  // Endpoint to delete a setting
+  app.delete("/api/settings/:key", async (req: Request, res: Response) => {
+    try {
+      const { key } = req.params;
+      const success = await storage.deleteSetting(key);
+      
+      if (success) {
+        res.json({ success: true, message: "Setting deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Setting not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete setting" });
+    }
+  });
 
   // Endpoint to create a new setting
   app.post("/api/settings", async (req: Request, res: Response) => {

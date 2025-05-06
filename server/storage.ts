@@ -23,6 +23,7 @@ export interface IStorage {
   getSettingByKey(key: string): Promise<Setting | undefined>;
   createSetting(setting: InsertSetting): Promise<Setting>;
   updateSetting(key: string, value: string): Promise<Setting | undefined>;
+  deleteSetting(key: string): Promise<boolean>;
   
   // Content operations
   getAllContents(): Promise<Content[]>;
@@ -141,6 +142,14 @@ export class MemStorage implements IStorage {
     this.settings.set(key, setting);
     return setting;
   }
+  
+  async deleteSetting(key: string): Promise<boolean> {
+    const exists = this.settings.has(key);
+    if (exists) {
+      this.settings.delete(key);
+    }
+    return exists;
+  }
 
   // Content operations
   async getAllContents(): Promise<Content[]> {
@@ -245,6 +254,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(settings.key, key))
       .returning();
     return setting;
+  }
+  
+  async deleteSetting(key: string): Promise<boolean> {
+    const deleted = await db
+      .delete(settings)
+      .where(eq(settings.key, key))
+      .returning({ id: settings.id });
+    
+    return deleted.length > 0;
   }
 
   // Content operations
