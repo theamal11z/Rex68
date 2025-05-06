@@ -19,7 +19,7 @@ const TerminalHeader: React.FC = () => {
         <div className="w-3 h-3 rounded-full bg-terminal-cyan"></div>
       </div>
       <div className="text-sm text-terminal-text font-mono">
-        Rex v1.0.0 • {time.toLocaleTimeString()}
+        Mohsin's Terminal • {time.toLocaleTimeString()}
       </div>
       <div className="w-6">
         {/* Placeholder to ensure the header is balanced */}

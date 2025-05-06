@@ -166,23 +166,23 @@ export default function useConversation(): UseConversationResult {
         behaviorRules
       );
       
-      // Create Rex's response
-      const rexMessage: Partial<Message> = {
+      // Create Mohsin's response
+      const mohsinMessage: Partial<Message> = {
         userId,
         content: responseText,
         isFromUser: 0,
         timestamp: new Date(),
       };
       
-      // Save Rex's response to backend
-      const rexMessageResponse = await apiRequest('POST', '/api/messages', rexMessage);
-      const savedRexMessage = await rexMessageResponse.json();
+      // Save Mohsin's response to backend
+      const mohsinMessageResponse = await apiRequest('POST', '/api/messages', mohsinMessage);
+      const savedMohsinMessage = await mohsinMessageResponse.json();
       
       // Update UI with the saved messages
       setMessages(prev => [
         ...prev.filter(m => m.id || m.content !== content), // Remove optimistic message
         savedUserMessage,
-        savedRexMessage
+        savedMohsinMessage
       ]);
     } catch (error) {
       console.error('Error in conversation:', error);
