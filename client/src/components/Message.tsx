@@ -50,12 +50,15 @@ const Message: React.FC<MessageProps> = ({ message, isLast }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className={`mr-2 ${message.isFromUser ? 'text-terminal-orange' : 'text-terminal-pink'}`}>
+      <div className={`mr-2 ${message.isFromUser ? 'text-terminal-orange' : 'text-terminal-pink'} text-sm sm:text-base whitespace-nowrap hidden sm:block`}>
         {message.isFromUser ? 'user@rex:~$' : 'rex@mohsin:~$'}
+      </div>
+      <div className={`mr-2 ${message.isFromUser ? 'text-terminal-orange' : 'text-terminal-pink'} text-sm sm:text-base whitespace-nowrap sm:hidden`}>
+        {message.isFromUser ? 'you:' : 'rex:'}
       </div>
       <div 
         ref={textRef}
-        className="text-terminal-text whitespace-pre-wrap"
+        className="text-terminal-text whitespace-pre-wrap text-sm sm:text-base flex-1"
       >
         {displayText}
         {isTyping && (
