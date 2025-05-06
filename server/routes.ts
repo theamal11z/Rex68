@@ -83,13 +83,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).join("\n");
       
       // Send to Gemini API for summarization
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           contents: [{
+            role: "user",
             parts: [{
               text: `Summarize the following conversation in 3-4 sentences, highlighting key topics, emotions, and any important points:\n\n${conversationText}`
             }]

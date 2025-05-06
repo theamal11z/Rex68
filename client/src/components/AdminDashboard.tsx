@@ -19,6 +19,10 @@ const AdminDashboard: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [currentSetting, setCurrentSetting] = useState<Setting | null>(null);
+  const [conversationSummary, setConversationSummary] = useState<string>("");
+  const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
+  const [deleteConversationDialogOpen, setDeleteConversationDialogOpen] = useState<boolean>(false);
+  const [userToDelete, setUserToDelete] = useState<string>("");
   const { toast } = useToast();
 
   // Form states
@@ -361,14 +365,9 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // Generate summary for a conversation
-  const [conversationSummary, setConversationSummary] = useState<string>("");
-  const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
-  const [deleteConversationDialogOpen, setDeleteConversationDialogOpen] = useState<boolean>(false);
-  const [userToDelete, setUserToDelete] = useState<string>("");
-  
-  const generateConversationSummary = async (userId: string) => {
-    if (!userId || conversations[userId]?.length === 0) {
+  // Generate AI summary for conversation
+  const handleGenerateConversationSummary = async (userId: string) => {
+    if (!userId || !conversations[userId] || conversations[userId].length === 0) {
       toast({
         title: "Error",
         description: "No conversation data available to summarize",
@@ -387,7 +386,7 @@ const AdminDashboard: React.FC = () => {
         setConversationSummary(data.summary);
       } else {
         // If the backend doesn't provide a summary, generate one client-side
-        const summary = await generateConversationSummary(conversations[userId]);
+        const summary = await generateConversationSummary(conversations[userId] as any);
         setConversationSummary(summary);
       }
       
@@ -422,9 +421,8 @@ const AdminDashboard: React.FC = () => {
       
       if (response.ok) {
         // Update local state by removing the deleted conversation
-        const updatedConversations = { ...conversations };
-        delete updatedConversations[userToDelete];
-        setConversations(updatedConversations);
+        const { [userToDelete]: _, ...remainingConversations } = conversations;
+        setConversations(remainingConversations);
         
         // If the active user was deleted, clear it
         if (activeUserId === userToDelete) {
@@ -450,7 +448,6 @@ const AdminDashboard: React.FC = () => {
       });
     }
   };
-
   
   // Format a date for display
   const formatDate = (dateString: string | Date) => {
@@ -701,68 +698,42 @@ const AdminDashboard: React.FC = () => {
                   
                   <div>
                     <h4 className="text-terminal-cyan text-sm mb-2">All Guidelines</h4>
-                    <div className="max-h-40 overflow-y-auto">
-                      {settings.length > 0 ? (
-                        <div className="space-y-2">
-                          {settings.map(setting => (
-                            <div key={setting.id} className="bg-terminal-bg p-2 rounded border border-terminal-muted">
-                              <div className="flex justify-between items-start">
-                                <div className="text-terminal-orange text-xs mb-1 font-bold">
-                                  {setting.key}
-                                </div>
-                                <div className="flex space-x-2">
-                                  <button 
-                                    className="text-terminal-cyan text-xs hover:text-terminal-purple" 
-                                    onClick={() => openEditDialog(setting)}
-                                    title="Edit guideline"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button 
-                                    className="text-terminal-red text-xs hover:text-terminal-orange" 
-                                    onClick={() => openDeleteDialog(setting)}
-                                    title="Delete guideline"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="text-terminal-text text-xs whitespace-pre-wrap break-words">
-                                {setting.value}
-                              </div>
+                    <div className="space-y-2">
+                      {settings.filter(s => 
+                        !['greeting_style', 'behavior_rules', 'personality', 'language_preference', 'api_key'].includes(s.key)
+                      ).map(setting => (
+                        <div key={setting.id} className="bg-terminal-bg p-3 rounded border border-terminal-muted">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-terminal-orange text-sm font-mono">{setting.key}</span>
+                            <div className="flex space-x-2">
+                              <button
+                                className="text-terminal-cyan text-xs hover:text-terminal-purple"
+                                onClick={() => openEditDialog(setting)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="text-terminal-red text-xs hover:text-terminal-orange"
+                                onClick={() => openDeleteDialog(setting)}
+                              >
+                                Delete
+                              </button>
                             </div>
-                          ))}
+                          </div>
+                          <div className="text-terminal-text text-xs whitespace-pre-wrap break-words">
+                            {setting.value}
+                          </div>
                         </div>
-                      ) : (
-                        <div className="text-terminal-muted text-center py-4">
-                          No settings available
+                      ))}
+                      
+                      {settings.filter(s => 
+                        !['greeting_style', 'behavior_rules', 'personality', 'language_preference', 'api_key'].includes(s.key)
+                      ).length === 0 && (
+                        <div className="text-center py-4 text-terminal-muted">
+                          No custom guidelines available yet.
                         </div>
                       )}
                     </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* API Configuration */}
-              <div className="bg-terminal-dark p-4 rounded border border-terminal-muted">
-                <h3 className="text-terminal-green mb-2">API Configuration</h3>
-                <div>
-                  <label className="block text-terminal-muted mb-1 text-sm">Gemini API Key</label>
-                  <div className="flex">
-                    <input
-                      type="password"
-                      value={formData.api_key}
-                      onChange={(e) => handleInputChange('api_key', e.target.value)}
-                      className="flex-1 bg-terminal-bg text-terminal-text border border-terminal-muted p-2 rounded-l text-sm"
-                      placeholder="Enter Gemini API key"
-                    />
-                    <button 
-                      className="bg-terminal-cyan hover:bg-terminal-purple text-white py-1 px-3 rounded-r text-sm transition-colors"
-                      onClick={() => updateSetting('api_key')}
-                      disabled={!formData.api_key}
-                    >
-                      Update Key
-                    </button>
                   </div>
                 </div>
               </div>
@@ -770,59 +741,48 @@ const AdminDashboard: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="language" className="mt-0">
-            <div className="bg-terminal-dark p-4 rounded border border-terminal-muted">
-              <h3 className="text-terminal-green mb-2">Language Settings</h3>
-              
-              <div className="space-y-4">
-                {/* Language Preference */}
-                <div>
-                  <label className="block text-terminal-muted mb-1 text-sm">Language Preference</label>
-                  <select
-                    value={formData.language_preference}
-                    onChange={(e) => handleInputChange('language_preference', e.target.value)}
-                    className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-2 rounded text-sm"
-                  >
-                    <option value="English only">English only</option>
-                    <option value="English with Hinglish when user initiates">English with Hinglish when user initiates</option>
-                    <option value="Mix of English and Hinglish">Mix of English and Hinglish</option>
-                    <option value="Primarily Hinglish">Primarily Hinglish</option>
-                  </select>
-                  <button 
-                    className="bg-terminal-cyan hover:bg-terminal-purple text-white py-1 px-3 rounded text-sm mt-2 transition-colors"
-                    onClick={() => updateSetting('language_preference')}
-                  >
-                    Update Language Preference
-                  </button>
-                </div>
+            <div className="grid grid-cols-1 gap-4">
+              {/* Language Settings */}
+              <div className="bg-terminal-dark p-4 rounded border border-terminal-muted">
+                <h3 className="text-terminal-green mb-2">Language Settings</h3>
                 
-                {/* Custom Response Templates */}
-                <div>
-                  <h4 className="text-terminal-cyan text-sm mb-2">Response Templates</h4>
-                  <p className="text-terminal-muted text-sm mb-4">
-                    Add custom response templates for different situations to maintain consistent tone and style.
-                  </p>
-                  
-                  <div className="space-y-2">
-                    <div className="bg-terminal-bg p-3 rounded border border-terminal-muted">
-                      <div className="text-terminal-green text-xs mb-1">Error Response</div>
-                      <p className="text-terminal-text text-sm">I'm sorry, I'm having trouble understanding. Could you rephrase that?</p>
-                    </div>
-                    
-                    <div className="bg-terminal-bg p-3 rounded border border-terminal-muted">
-                      <div className="text-terminal-green text-xs mb-1">Emotional Support</div>
-                      <p className="text-terminal-text text-sm">I hear you. That sounds really challenging. What would help you right now?</p>
-                    </div>
+                <div className="space-y-4">
+                  {/* Language Preference */}
+                  <div>
+                    <label className="block text-terminal-muted mb-1 text-sm">Language Preference</label>
+                    <textarea
+                      value={formData.language_preference}
+                      onChange={(e) => handleInputChange('language_preference', e.target.value)}
+                      className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-2 rounded h-20 text-sm"
+                      placeholder="Language preference (e.g., English, Hinglish, English with occasional Hinglish)..."
+                    />
+                    <button 
+                      className="bg-terminal-cyan hover:bg-terminal-purple text-white py-1 px-3 rounded text-sm mt-1 transition-colors"
+                      onClick={() => updateSetting('language_preference')}
+                      disabled={!formData.language_preference}
+                    >
+                      Update Language Preference
+                    </button>
                   </div>
                   
-                  <button 
-                    className="bg-terminal-cyan hover:bg-terminal-purple text-white py-1 px-3 rounded text-sm mt-3 transition-colors"
-                    onClick={() => toast({
-                      title: "Feature Coming Soon",
-                      description: "Custom response template editor will be available in the next update."
-                    })}
-                  >
-                    Edit Templates
-                  </button>
+                  {/* API Key */}
+                  <div>
+                    <label className="block text-terminal-muted mb-1 text-sm">Gemini API Key</label>
+                    <input
+                      type="password"
+                      value={formData.api_key}
+                      onChange={(e) => handleInputChange('api_key', e.target.value)}
+                      className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-2 rounded text-sm"
+                      placeholder="Enter Gemini API key..."
+                    />
+                    <button 
+                      className="bg-terminal-cyan hover:bg-terminal-purple text-white py-1 px-3 rounded text-sm mt-1 transition-colors"
+                      onClick={() => updateSetting('api_key')}
+                      disabled={!formData.api_key}
+                    >
+                      Update API Key
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -834,7 +794,7 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-terminal-dark p-4 rounded border border-terminal-muted">
                 <h3 className="text-terminal-green mb-2">Create Content</h3>
                 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div>
                     <label className="block text-terminal-muted mb-1 text-sm">Content Type</label>
                     <select
@@ -842,10 +802,10 @@ const AdminDashboard: React.FC = () => {
                       onChange={(e) => setContentType(e.target.value)}
                       className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-2 rounded text-sm"
                     >
-                      <option value="microblog">Microblog Post</option>
-                      <option value="reflection">Personal Reflection</option>
+                      <option value="microblog">Microblog</option>
+                      <option value="reflection">Reflection</option>
                       <option value="quote">Quote</option>
-                      <option value="fact">Interesting Fact</option>
+                      <option value="insight">Personal Insight</option>
                     </select>
                   </div>
                   
@@ -855,76 +815,76 @@ const AdminDashboard: React.FC = () => {
                       value={formData.new_content}
                       onChange={(e) => handleInputChange('new_content', e.target.value)}
                       className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-2 rounded h-40 text-sm"
-                      placeholder="Enter your content here..."
+                      placeholder="Enter content here..."
                     />
+                    <button 
+                      className="bg-terminal-cyan hover:bg-terminal-purple text-white py-1 px-3 rounded text-sm mt-1 transition-colors"
+                      onClick={addContent}
+                      disabled={!formData.new_content}
+                    >
+                      Add Content
+                    </button>
                   </div>
-                  
-                  <button 
-                    className="bg-terminal-cyan hover:bg-terminal-purple text-white py-1 px-3 rounded text-sm mt-2 transition-colors"
-                    onClick={addContent}
-                    disabled={!formData.new_content}
-                  >
-                    Add Content
-                  </button>
                 </div>
               </div>
               
               {/* Content Browser */}
               <div className="bg-terminal-dark p-4 rounded border border-terminal-muted">
-                <h3 className="text-terminal-green mb-2">Content Library</h3>
+                <h3 className="text-terminal-green mb-2">Content Browser</h3>
                 
-                <div className="space-y-1 mb-2">
-                  <button 
-                    className={`py-1 px-2 text-xs rounded-full mr-1 ${contentType === 'all' ? 'bg-terminal-cyan text-black' : 'bg-terminal-bg text-terminal-muted'}`}
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <button
+                    className={`text-xs py-1 px-2 rounded transition-colors ${contentType === 'all' ? 'bg-terminal-cyan text-black' : 'bg-terminal-bg text-terminal-text'}`}
                     onClick={() => setContentType('all')}
                   >
                     All
                   </button>
-                  <button 
-                    className={`py-1 px-2 text-xs rounded-full mr-1 ${contentType === 'microblog' ? 'bg-terminal-cyan text-black' : 'bg-terminal-bg text-terminal-muted'}`}
+                  <button
+                    className={`text-xs py-1 px-2 rounded transition-colors ${contentType === 'microblog' ? 'bg-terminal-cyan text-black' : 'bg-terminal-bg text-terminal-text'}`}
                     onClick={() => setContentType('microblog')}
                   >
                     Microblogs
                   </button>
-                  <button 
-                    className={`py-1 px-2 text-xs rounded-full mr-1 ${contentType === 'reflection' ? 'bg-terminal-cyan text-black' : 'bg-terminal-bg text-terminal-muted'}`}
+                  <button
+                    className={`text-xs py-1 px-2 rounded transition-colors ${contentType === 'reflection' ? 'bg-terminal-cyan text-black' : 'bg-terminal-bg text-terminal-text'}`}
                     onClick={() => setContentType('reflection')}
                   >
                     Reflections
                   </button>
-                  <button 
-                    className={`py-1 px-2 text-xs rounded-full ${contentType === 'quote' ? 'bg-terminal-cyan text-black' : 'bg-terminal-bg text-terminal-muted'}`}
+                  <button
+                    className={`text-xs py-1 px-2 rounded transition-colors ${contentType === 'quote' ? 'bg-terminal-cyan text-black' : 'bg-terminal-bg text-terminal-text'}`}
                     onClick={() => setContentType('quote')}
                   >
                     Quotes
                   </button>
+                  <button
+                    className={`text-xs py-1 px-2 rounded transition-colors ${contentType === 'insight' ? 'bg-terminal-cyan text-black' : 'bg-terminal-bg text-terminal-text'}`}
+                    onClick={() => setContentType('insight')}
+                  >
+                    Insights
+                  </button>
                 </div>
                 
-                <div className="max-h-60 overflow-y-auto mt-3">
-                  {contents.length > 0 ? (
-                    <div className="space-y-3">
-                      {contents
-                        .filter(content => contentType === 'all' || content.type === contentType)
-                        .map(content => (
-                          <div key={content.id} className="bg-terminal-bg p-3 rounded border border-terminal-muted">
-                            <div className="flex justify-between items-start mb-1">
-                              <Badge variant="outline" className="text-terminal-orange text-xs capitalize">
-                                {content.type}
-                              </Badge>
-                              <span className="text-terminal-muted text-xs">
-                                {formatDate(content.timestamp)}
-                              </span>
-                            </div>
-                            <p className="text-terminal-text text-sm whitespace-pre-wrap">
-                              {content.content}
-                            </p>
-                          </div>
-                        ))
-                      }
-                    </div>
-                  ) : (
-                    <div className="text-terminal-muted text-center py-8">
-                      No content available. Create some!
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {contents
+                    .filter(content => contentType === 'all' || content.type === contentType)
+                    .map(content => (
+                      <div key={content.id} className="bg-terminal-bg p-3 rounded border border-terminal-muted">
+                        <div className="flex justify-between items-center mb-2">
+                          <Badge className="bg-terminal-purple text-white">
+                            {content.type}
+                          </Badge>
+                          <span className="text-terminal-muted text-xs">{formatDate(content.timestamp)}</span>
+                        </div>
+                        <div className="text-terminal-text text-sm whitespace-pre-wrap break-words">
+                          {content.content}
+                        </div>
+                      </div>
+                    ))}
+                  
+                  {contents.filter(content => contentType === 'all' || content.type === contentType).length === 0 && (
+                    <div className="text-center py-8 text-terminal-muted">
+                      No content available yet.
                     </div>
                   )}
                 </div>
@@ -934,11 +894,11 @@ const AdminDashboard: React.FC = () => {
           
           <TabsContent value="memory" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Add Memory */}
+              {/* Memory Creation */}
               <div className="bg-terminal-dark p-4 rounded border border-terminal-muted">
                 <h3 className="text-terminal-green mb-2">Create Memory</h3>
                 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div>
                     <label className="block text-terminal-muted mb-1 text-sm">User ID</label>
                     <input
@@ -946,18 +906,29 @@ const AdminDashboard: React.FC = () => {
                       value={formData.new_memory_userId}
                       onChange={(e) => handleInputChange('new_memory_userId', e.target.value)}
                       className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-2 rounded text-sm"
-                      placeholder="Enter user ID (e.g. user_abcd1234)"
+                      placeholder="Enter user ID for this memory..."
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-terminal-muted mb-1 text-sm">Context (JSON or plain text)</label>
+                    <label className="block text-terminal-muted mb-1 text-sm">Memory Context</label>
                     <textarea
                       value={formData.new_memory_context}
                       onChange={(e) => handleInputChange('new_memory_context', e.target.value)}
-                      className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-2 rounded h-40 text-sm font-mono"
-                      placeholder='{"sentiment": "positive", "interests": ["tech", "philosophy"], "notes": "Enjoys discussing AI ethics"}'
+                      className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-2 rounded h-40 text-sm"
+                      placeholder="Enter memory context (JSON or simple text)..."
                     />
+                  </div>
+                  
+                  <div className="text-terminal-muted text-xs mb-2">
+                    <p>You can enter either simple text or a JSON object. Simple text will be converted to:</p>
+                    <pre className="bg-terminal-bg p-1 rounded mt-1">
+                      {`{
+  "sentiment": "neutral",
+  "lastInteraction": "[current date]",
+  "notes": "[your text]"
+}`}
+                    </pre>
                   </div>
                   
                   <button 
@@ -1063,7 +1034,7 @@ const AdminDashboard: React.FC = () => {
                   {activeUserId && conversations[activeUserId]?.length > 0 && (
                     <button
                       className="bg-terminal-cyan hover:bg-terminal-purple text-white py-1 px-3 rounded text-sm transition-colors"
-                      onClick={() => generateConversationSummary(activeUserId)}
+                      onClick={() => handleGenerateConversationSummary(activeUserId)}
                       disabled={summaryLoading}
                     >
                       {summaryLoading ? 'Generating...' : 'Generate AI Summary'}
