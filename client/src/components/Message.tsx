@@ -45,21 +45,21 @@ const Message: React.FC<MessageProps> = ({ message, isLast }) => {
 
   return (
     <motion.div
-      className="flex flex-col sm:flex-row items-start mt-4"
+      className="flex items-start mt-4"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className={`sm:mr-2 mb-1 sm:mb-0 text-sm sm:text-base ${message.isFromUser ? 'text-terminal-orange' : 'text-terminal-pink'}`}>
+      <div className={`mr-2 ${message.isFromUser ? 'text-terminal-orange' : 'text-terminal-pink'}`}>
         {message.isFromUser ? 'user@rex:~$' : 'rex@mohsin:~$'}
       </div>
       <div 
         ref={textRef}
-        className="text-terminal-text whitespace-pre-wrap text-sm sm:text-base"
+        className="text-terminal-text whitespace-pre-wrap"
       >
         {displayText}
         {isTyping && (
-          <span className="cursor ml-1 inline-block w-1.5 sm:w-2 h-3.5 sm:h-4 bg-terminal-text animate-blink"></span>
+          <span className="cursor ml-1 inline-block w-2 h-4 bg-terminal-text animate-blink"></span>
         )}
       </div>
     </motion.div>

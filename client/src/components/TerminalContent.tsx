@@ -21,12 +21,12 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
   return (
     <div 
       ref={contentRef} 
-      className="terminal-content p-4 overflow-y-auto flex-1 relative"
+      className="terminal-content p-4 overflow-y-auto"
+      style={{ height: 'calc(100vh - 180px)' }}
     >
-      <div className="message-container space-y-2 pb-4 relative z-10">
+      <div className="message-container space-y-2 pb-20 relative z-10">
         {/* Welcome ASCII Art */}
-        {/* Desktop logo */}
-        <div className="text-terminal-cyan text-xs leading-tight mb-4 font-mono whitespace-pre hidden sm:block">
+        <div className="text-terminal-cyan text-xs leading-tight mb-4 font-mono whitespace-pre">
 {`  ██████╗░███████╗██╗░░██╗
   ██╔══██╗██╔════╝╚██╗██╔╝
   ██████╔╝█████╗░░░╚███╔╝░
@@ -35,23 +35,16 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
   ╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝`}
         </div>
         
-        {/* Mobile logo */}
-        <div className="text-center mb-4 sm:hidden">
-          <div className="inline-block px-4 py-2 bg-terminal-pink text-terminal-dark text-2xl font-bold rounded-md">
-            REX
-          </div>
-        </div>
-        
         {/* System message */}
         <div className="text-terminal-muted text-sm italic mb-4">
           # A window into Mohsin's thoughts and reflections
         </div>
         
         {/* Initial welcome message */}
-        <div className="flex flex-col sm:flex-row items-start mb-6">
-          <div className="text-terminal-pink sm:mr-2 mb-1 sm:mb-0 text-sm sm:text-base">rex@mohsin:~$</div>
+        <div className="flex items-start mb-6">
+          <div className="text-terminal-pink mr-2">rex@mohsin:~$</div>
           <motion.div 
-            className="text-terminal-green font-mono text-sm sm:text-base"
+            className="text-terminal-green font-mono"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
@@ -71,9 +64,9 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
         
         {/* Loading indicator */}
         {loading && (
-          <div className="flex flex-col sm:flex-row items-start mt-4">
-            <div className="text-terminal-pink sm:mr-2 mb-1 sm:mb-0 text-sm sm:text-base">rex@mohsin:~$</div>
-            <div className="text-terminal-text text-sm sm:text-base">
+          <div className="flex items-start mt-4">
+            <div className="text-terminal-pink mr-2">rex@mohsin:~$</div>
+            <div className="text-terminal-text">
               <span className="typing-dots">
                 <span className="dot">.</span>
                 <span className="dot">.</span>

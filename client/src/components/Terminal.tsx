@@ -41,16 +41,16 @@ const Terminal: React.FC = () => {
 
   return (
     <motion.div
-      className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-4xl h-screen flex flex-col"
+      className="container mx-auto px-4 py-8 max-w-4xl"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="terminal-window flex-1 flex flex-col overflow-hidden">
+      <div className="terminal-window">
         <TerminalHeader />
         
         <div 
-          className="terminal-content-wrapper flex-1 flex flex-col overflow-hidden"
+          className="terminal-content-wrapper"
           style={{
             backgroundImage: background,
             backgroundSize: 'cover',
