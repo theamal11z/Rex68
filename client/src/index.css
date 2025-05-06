@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 346 77% 49%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 240 4.9% 83.9%;
+  --radius: 0.5rem;
+  
+  /* Terminal-specific colors */
+  --terminal-bg: #1e1e1e;
+  --terminal-pink: #f92672;
+  --terminal-cyan: #66d9ef;
+  --terminal-green: #a6e22e;
+  --terminal-orange: #fd971f;
+  --terminal-purple: #ae81ff;
+  --terminal-text: #f8f8f2;
+  --terminal-muted: #75715e;
+  --terminal-dark: #121212;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-mono antialiased bg-terminal-dark text-terminal-text;
+  }
+}
+
+/* Terminal-specific styles */
+.terminal-window {
+  @apply bg-terminal-bg rounded-lg shadow-2xl overflow-hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.terminal-header {
+  @apply bg-gradient-to-r;
+  background-color: var(--terminal-pink);
+  background-image: linear-gradient(to right, var(--terminal-pink), var(--terminal-purple));
+}
+
+.terminal-content {
+  min-height: 300px;
+  position: relative;
+}
+
+/* Add scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-terminal-bg;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-terminal-muted rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-terminal-pink;
+}
+
+/* Typing animation dots */
+.typing-dots .dot {
+  @apply inline-block;
+  animation: typing-dots 1.4s infinite;
+  opacity: 0;
+}
+
+.typing-dots .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dots .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing-dots {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Blinking cursor animation */
+.cursor {
+  display: inline-block;
+  width: 10px;
+  height: 18px;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Add utility classes for terminal colors */
+.text-terminal-bg { color: var(--terminal-bg); }
+.text-terminal-pink { color: var(--terminal-pink); }
+.text-terminal-cyan { color: var(--terminal-cyan); }
+.text-terminal-green { color: var(--terminal-green); }
+.text-terminal-orange { color: var(--terminal-orange); }
+.text-terminal-purple { color: var(--terminal-purple); }
+.text-terminal-text { color: var(--terminal-text); }
+.text-terminal-muted { color: var(--terminal-muted); }
+.text-terminal-dark { color: var(--terminal-dark); }
+
+.bg-terminal-bg { background-color: var(--terminal-bg); }
+.bg-terminal-pink { background-color: var(--terminal-pink); }
+.bg-terminal-cyan { background-color: var(--terminal-cyan); }
+.bg-terminal-green { background-color: var(--terminal-green); }
+.bg-terminal-orange { background-color: var(--terminal-orange); }
+.bg-terminal-purple { background-color: var(--terminal-purple); }
+.bg-terminal-text { background-color: var(--terminal-text); }
+.bg-terminal-muted { background-color: var(--terminal-muted); }
+.bg-terminal-dark { background-color: var(--terminal-dark); }
+
+.border-terminal-muted { border-color: var(--terminal-muted); }
+
+/* Font styling */
+.font-mono {
+  font-family: 'JetBrains Mono', Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
