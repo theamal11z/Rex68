@@ -354,6 +354,85 @@ const AdminDashboard: React.FC = () => {
     <div>
       <h2 className="text-xl text-terminal-cyan mb-4 font-mono">Rex Configuration Panel</h2>
       
+      {/* Edit Guideline Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="bg-terminal-dark border border-terminal-muted text-terminal-text">
+          <DialogHeader>
+            <DialogTitle className="text-terminal-cyan">Edit Guideline</DialogTitle>
+            <DialogDescription className="text-terminal-muted">
+              Edit the guideline value below. The key cannot be changed.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {currentSetting && (
+            <div className="space-y-4 py-4">
+              <div className="text-terminal-orange font-mono">
+                {currentSetting.key}
+              </div>
+              <textarea 
+                value={formData[`edit_${currentSetting.key}` as keyof typeof formData] as string || currentSetting.value}
+                onChange={(e) => handleInputChange(`edit_${currentSetting.key}`, e.target.value)}
+                className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-2 rounded h-40 text-sm"
+                placeholder="Enter guideline value..."
+              />
+            </div>
+          )}
+          
+          <DialogFooter>
+            <button
+              className="bg-terminal-muted hover:bg-terminal-dark text-terminal-text py-1 px-3 rounded text-sm transition-colors"
+              onClick={() => setEditDialogOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="bg-terminal-cyan hover:bg-terminal-purple text-white py-1 px-3 rounded text-sm transition-colors"
+              onClick={handleEditSetting}
+            >
+              Save Changes
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Guideline Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="bg-terminal-dark border border-terminal-muted text-terminal-text">
+          <DialogHeader>
+            <DialogTitle className="text-terminal-red">Delete Guideline</DialogTitle>
+            <DialogDescription className="text-terminal-muted">
+              Are you sure you want to delete this guideline? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {currentSetting && (
+            <div className="py-4">
+              <div className="text-terminal-orange font-mono mb-2">
+                {currentSetting.key}
+              </div>
+              <div className="text-terminal-text text-sm whitespace-pre-wrap break-words bg-terminal-bg p-2 rounded">
+                {currentSetting.value}
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <button
+              className="bg-terminal-muted hover:bg-terminal-dark text-terminal-text py-1 px-3 rounded text-sm transition-colors"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="bg-terminal-red hover:bg-terminal-orange text-white py-1 px-3 rounded text-sm transition-colors"
+              onClick={handleDeleteSetting}
+            >
+              Delete Guideline
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       {loading ? (
         <div className="text-terminal-muted">Loading configuration data...</div>
       ) : (
@@ -483,8 +562,26 @@ const AdminDashboard: React.FC = () => {
                         <div className="space-y-2">
                           {settings.map(setting => (
                             <div key={setting.id} className="bg-terminal-bg p-2 rounded border border-terminal-muted">
-                              <div className="text-terminal-orange text-xs mb-1 font-bold">
-                                {setting.key}
+                              <div className="flex justify-between items-start">
+                                <div className="text-terminal-orange text-xs mb-1 font-bold">
+                                  {setting.key}
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button 
+                                    className="text-terminal-cyan text-xs hover:text-terminal-purple" 
+                                    onClick={() => openEditDialog(setting)}
+                                    title="Edit guideline"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button 
+                                    className="text-terminal-red text-xs hover:text-terminal-orange" 
+                                    onClick={() => openDeleteDialog(setting)}
+                                    title="Delete guideline"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
                               </div>
                               <div className="text-terminal-text text-xs whitespace-pre-wrap break-words">
                                 {setting.value}
