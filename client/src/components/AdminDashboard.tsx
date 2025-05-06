@@ -1011,31 +1011,63 @@ const AdminDashboard: React.FC = () => {
                 <div className="text-terminal-muted text-xs mb-2">
                   User IDs from known conversations:
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {Object.keys(conversations).map(userId => (
-                    <button
-                      key={userId}
-                      className={`block w-full text-left py-1 px-2 rounded text-xs ${userId === activeUserId ? 'bg-terminal-cyan text-black' : 'bg-terminal-bg text-terminal-text'}`}
-                      onClick={() => setActiveUserId(userId)}
-                    >
-                      {userId}
-                    </button>
+                    <div key={userId} className="bg-terminal-bg rounded border border-terminal-muted p-2">
+                      <div className="flex justify-between items-center">
+                        <button
+                          className={`text-left py-1 px-2 rounded text-xs flex-grow ${userId === activeUserId ? 'text-terminal-cyan font-bold' : 'text-terminal-text'}`}
+                          onClick={() => {
+                            setActiveUserId(userId);
+                            fetchConversations(userId);
+                          }}
+                        >
+                          {userId}
+                        </button>
+                        <button
+                          className="text-terminal-red text-xs hover:text-terminal-orange"
+                          onClick={() => openDeleteConversationDialog(userId)}
+                          title="Delete conversation"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
               
               {/* Conversation Display */}
               <div className="bg-terminal-dark p-4 rounded border border-terminal-muted md:col-span-2">
-                <h3 className="text-terminal-green mb-2">
-                  {activeUserId ? `Conversation with ${activeUserId}` : 'Select a User'}
-                </h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-terminal-green">
+                    {activeUserId ? `Conversation with ${activeUserId}` : 'Select a User'}
+                  </h3>
+                  
+                  {activeUserId && conversations[activeUserId]?.length > 0 && (
+                    <button
+                      className="bg-terminal-cyan hover:bg-terminal-purple text-white py-1 px-3 rounded text-sm transition-colors"
+                      onClick={() => generateConversationSummary(activeUserId)}
+                      disabled={summaryLoading}
+                    >
+                      {summaryLoading ? 'Generating...' : 'Generate AI Summary'}
+                    </button>
+                  )}
+                </div>
                 
-                {activeUserId && conversations[activeUserId] ? (
+                {conversationSummary && (
+                  <div className="bg-terminal-bg p-3 mb-4 rounded border border-terminal-muted">
+                    <h4 className="text-terminal-orange text-sm mb-1">AI Summary</h4>
+                    <p className="text-terminal-text text-sm whitespace-pre-wrap">{conversationSummary}</p>
+                  </div>
+                )}
+                
+                {activeUserId && conversations[activeUserId]?.length > 0 ? (
                   <div className="bg-terminal-bg rounded border border-terminal-muted p-2 h-96 overflow-y-auto font-mono text-sm">
-                    {conversations[activeUserId].map((message, index) => (
-                      <div key={index} className={`mb-3 ${message.isFromUser ? 'pl-4' : 'pl-0'}`}>
+                    {conversations[activeUserId].map((message) => (
+                      <div key={message.id} className={`mb-3 ${message.isFromUser ? 'pl-4' : 'pl-0'}`}>
                         <div className="flex items-start">
-                          <span className={`mr-2 ${message.isFromUser ? 'text-terminal-orange' : 'text-terminal-pink'}`}>
+                          <span className={`mr-2 ${message.isFromUser ? 'text-terminal-orange' : 'text-terminal-cyan'}`}>
                             {message.isFromUser ? 'user>' : 'rex>'}
                           </span>
                           <span className={`${message.isFromUser ? 'text-terminal-text' : 'text-terminal-green'}`}>
