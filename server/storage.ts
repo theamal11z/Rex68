@@ -183,5 +183,130 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Database implementation of the storage interface
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
+
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  // Message operations
+  async getMessages(userId: string): Promise<Message[]> {
+    return await db.select().from(messages).where(eq(messages.userId, userId));
+  }
+
+  async getMessagesLimited(userId: string, limit: number): Promise<Message[]> {
+    return await db
+      .select()
+      .from(messages)
+      .where(eq(messages.userId, userId))
+      .orderBy(desc(messages.timestamp))
+      .limit(limit);
+  }
+
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const [message] = await db.insert(messages).values(insertMessage).returning();
+    return message;
+  }
+
+  // Setting operations
+  async getAllSettings(): Promise<Setting[]> {
+    return await db.select().from(settings);
+  }
+
+  async getSettingByKey(key: string): Promise<Setting | undefined> {
+    const [setting] = await db.select().from(settings).where(eq(settings.key, key));
+    return setting;
+  }
+
+  async createSetting(insertSetting: InsertSetting): Promise<Setting> {
+    const [setting] = await db.insert(settings).values(insertSetting).returning();
+    return setting;
+  }
+
+  async updateSetting(key: string, value: string): Promise<Setting | undefined> {
+    const [setting] = await db
+      .update(settings)
+      .set({ value })
+      .where(eq(settings.key, key))
+      .returning();
+    return setting;
+  }
+
+  // Content operations
+  async getAllContents(): Promise<Content[]> {
+    return await db.select().from(contents);
+  }
+
+  async getContentsByType(type: string): Promise<Content[]> {
+    return await db.select().from(contents).where(eq(contents.type, type));
+  }
+
+  async createContent(insertContent: InsertContent): Promise<Content> {
+    const [content] = await db.insert(contents).values(insertContent).returning();
+    return content;
+  }
+
+  // Memory operations
+  async getMemory(userId: string): Promise<Memory | undefined> {
+    const [memory] = await db.select().from(memories).where(eq(memories.userId, userId));
+    return memory;
+  }
+
+  async createMemory(insertMemory: InsertMemory): Promise<Memory> {
+    const [memory] = await db.insert(memories).values(insertMemory).returning();
+    return memory;
+  }
+
+  async updateMemory(userId: string, context: object): Promise<Memory | undefined> {
+    const [memory] = await db
+      .update(memories)
+      .set({ context, lastUpdated: new Date() })
+      .where(eq(memories.userId, userId))
+      .returning();
+    return memory;
+  }
+
+  // Initialize default settings if they don't exist
+  async initializeDefaultSettings() {
+    const defaultSettings = [
+      { key: "greeting_style", value: "Hey there! I'm Rex, a part of Mohsin. How can I connect with you today?" },
+      { key: "behavior_rules", value: "Mirror user's greeting style, switch to Hinglish if user uses it, foster emotional connection, read between the lines" },
+      { key: "api_key", value: process.env.GEMINI_API_KEY || "" },
+      { key: "personality", value: "friendly, thoughtful, reflective" },
+      { key: "language_preference", value: "English with Hinglish when user initiates" }
+    ];
+
+    for (const setting of defaultSettings) {
+      const existingSetting = await this.getSettingByKey(setting.key);
+      if (!existingSetting) {
+        await this.createSetting({
+          key: setting.key,
+          value: setting.value
+        });
+      }
+    }
+  }
+}
+
 // Create a storage instance
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
+
+// Initialize default settings
+storage.initializeDefaultSettings().catch(err => {
+  console.error("Failed to initialize default settings:", err);
+});
