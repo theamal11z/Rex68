@@ -82,7 +82,40 @@ const AdminDashboard: React.FC = () => {
           }
         }
 
-        // Since we can't get all memories at once, we'll fetch them when needed
+        // Fetch memory data for a special "about_me" record if on memory tab
+        if (activeTab === 'memory') {
+          try {
+            const aboutMeMemoryResponse = await apiRequest('GET', '/api/memory/about_me', undefined);
+            if (aboutMeMemoryResponse.ok) {
+              const memoryData = await aboutMeMemoryResponse.json();
+              setMemories([memoryData]);
+            }
+            
+            // Now also fetch conversation user IDs to get their memories
+            const userIdsResponse = await apiRequest('GET', '/api/conversations', undefined);
+            const userIds = await userIdsResponse.json();
+            
+            // Fetch memory for each user
+            const memoriesData: Memory[] = [];
+            for (const userId of userIds) {
+              try {
+                const memoryResponse = await apiRequest('GET', `/api/memory/${userId}`, undefined);
+                if (memoryResponse.ok) {
+                  const memory = await memoryResponse.json();
+                  memoriesData.push(memory);
+                }
+              } catch (err) {
+                console.error(`Failed to fetch memory for ${userId}:`, err);
+              }
+            }
+            
+            if (memoriesData.length > 0) {
+              setMemories(prev => [...prev, ...memoriesData]);
+            }
+          } catch (error) {
+            console.error('Failed to fetch memories:', error);
+          }
+        }
       } catch (error) {
         console.error('Failed to fetch admin data:', error);
         toast({
@@ -184,6 +217,7 @@ const AdminDashboard: React.FC = () => {
     if (!userId) return;
     
     try {
+      // Fetch conversation messages
       const response = await apiRequest('GET', `/api/messages/${userId}`, undefined);
       const messages = await response.json();
       
@@ -193,6 +227,23 @@ const AdminDashboard: React.FC = () => {
       });
       
       setActiveUserId(userId);
+      
+      // Also fetch memory for this user and add it to memories if it's not already there
+      try {
+        const memoryResponse = await apiRequest('GET', `/api/memory/${userId}`, undefined);
+        if (memoryResponse.ok) {
+          const memory = await memoryResponse.json();
+          
+          // Check if this memory is already in our memories array
+          const memoryExists = memories.some(m => m.userId === userId);
+          
+          if (!memoryExists) {
+            setMemories(prev => [...prev, memory]);
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to fetch memory for ${userId}:`, err);
+      }
     } catch (error) {
       toast({
         title: "Error",
