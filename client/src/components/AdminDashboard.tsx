@@ -953,7 +953,15 @@ const AdminDashboard: React.FC = () => {
                           <Badge className="bg-terminal-purple text-white">
                             {content.type}
                           </Badge>
-                          <span className="text-terminal-muted text-xs">{formatDate(content.timestamp)}</span>
+                          <div className="flex items-center space-x-3">
+                            <span className="text-terminal-muted text-xs">{formatDate(content.timestamp)}</span>
+                            <button
+                              className="text-terminal-red text-xs hover:text-terminal-orange"
+                              onClick={() => openDeleteContentDialog(content)}
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
                         <div className="text-terminal-text text-sm whitespace-pre-wrap break-words">
                           {content.content}
