@@ -25,7 +25,9 @@ const AdminDashboard: React.FC = () => {
     new_content: '',
     new_memory_userId: '',
     new_memory_context: '',
-    api_key: ''
+    api_key: '',
+    new_guideline_key: '',
+    new_guideline_value: ''
   });
 
   // Fetch all data on mount
@@ -173,6 +175,44 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Add a new custom guideline
+  const addCustomGuideline = async () => {
+    if (!formData.new_guideline_key || !formData.new_guideline_value) {
+      toast({
+        title: "Error",
+        description: "Both guideline key and value are required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const response = await apiRequest('POST', '/api/settings', {
+        key: formData.new_guideline_key,
+        value: formData.new_guideline_value
+      });
+      
+      const newSetting = await response.json();
+      
+      // Update local state
+      setSettings([...settings, newSetting]);
+      
+      toast({
+        title: "Success",
+        description: "Custom guideline added successfully",
+      });
+      
+      handleInputChange('new_guideline_key', '');
+      handleInputChange('new_guideline_value', '');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add custom guideline",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Create a new memory
   const createMemory = async () => {
     if (!formData.new_memory_userId || !formData.new_memory_context) {
@@ -315,6 +355,69 @@ const AdminDashboard: React.FC = () => {
                     >
                       Update Guidelines
                     </button>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Custom Guidelines */}
+              <div className="bg-terminal-dark p-4 rounded border border-terminal-muted">
+                <h3 className="text-terminal-green mb-2">Custom Guidelines</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-terminal-muted mb-1 text-sm">Create New Guideline</label>
+                    
+                    <div className="mb-2">
+                      <label className="block text-terminal-muted text-xs mb-1">Guideline Key</label>
+                      <input
+                        type="text"
+                        value={formData.new_guideline_key}
+                        onChange={(e) => handleInputChange('new_guideline_key', e.target.value)}
+                        className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-2 rounded text-sm"
+                        placeholder="e.g., response_style_formal, topic_politics, etc."
+                      />
+                    </div>
+                    
+                    <div className="mb-2">
+                      <label className="block text-terminal-muted text-xs mb-1">Guideline Value</label>
+                      <textarea
+                        value={formData.new_guideline_value}
+                        onChange={(e) => handleInputChange('new_guideline_value', e.target.value)}
+                        className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-2 rounded h-24 text-sm"
+                        placeholder="Enter the guideline content here..."
+                      />
+                    </div>
+                    
+                    <button 
+                      className="bg-terminal-orange hover:bg-terminal-purple text-white py-1 px-3 rounded text-sm transition-colors"
+                      onClick={addCustomGuideline}
+                      disabled={!formData.new_guideline_key || !formData.new_guideline_value}
+                    >
+                      Add Custom Guideline
+                    </button>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-terminal-cyan text-sm mb-2">All Guidelines</h4>
+                    <div className="max-h-40 overflow-y-auto">
+                      {settings.length > 0 ? (
+                        <div className="space-y-2">
+                          {settings.map(setting => (
+                            <div key={setting.id} className="bg-terminal-bg p-2 rounded border border-terminal-muted">
+                              <div className="text-terminal-orange text-xs mb-1 font-bold">
+                                {setting.key}
+                              </div>
+                              <div className="text-terminal-text text-xs whitespace-pre-wrap break-words">
+                                {setting.value}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-terminal-muted text-center py-4">
+                          No settings available
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
