@@ -16,7 +16,7 @@ const TerminalInput: React.FC<TerminalInputProps> = ({ onSendMessage, disabled }
   };
 
   return (
-    <div className="bg-terminal-dark p-4 border-t border-terminal-muted">
+    <div className="bg-terminal-dark p-3 sm:p-4 border-t border-terminal-muted relative z-10">
       <div className="flex flex-wrap items-center">
         <div className="text-terminal-orange mr-2 whitespace-nowrap">user@rex:~$</div>
         <div className="flex-1 min-w-0 flex items-center">

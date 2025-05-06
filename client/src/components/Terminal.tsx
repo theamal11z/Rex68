@@ -50,7 +50,7 @@ const Terminal: React.FC = () => {
         <TerminalHeader />
         
         <div 
-          className="terminal-content-wrapper"
+          className="terminal-content-wrapper flex flex-col"
           style={{
             backgroundImage: background,
             backgroundSize: 'cover',
