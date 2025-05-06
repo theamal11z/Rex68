@@ -12,7 +12,7 @@ const Message: React.FC<MessageProps> = ({ message, isLast }) => {
   const [isTyping, setIsTyping] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
 
-  // Typing animation for Rex's messages
+  // Typing animation for Mohsin's messages
   useEffect(() => {
     if (message.isFromUser || !isLast) {
       setDisplayText(message.content);
@@ -51,7 +51,7 @@ const Message: React.FC<MessageProps> = ({ message, isLast }) => {
       transition={{ duration: 0.3 }}
     >
       <div className={`mr-2 whitespace-nowrap text-sm sm:text-base ${message.isFromUser ? 'text-terminal-orange' : 'text-terminal-pink'}`}>
-        {message.isFromUser ? 'user@rex:~$' : 'rex@mohsin:~$'}
+        {message.isFromUser ? 'user@terminal:~$' : 'mohsin@terminal:~$'}
       </div>
       <div 
         ref={textRef}

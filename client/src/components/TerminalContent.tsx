@@ -22,7 +22,7 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
     <div 
       ref={contentRef} 
       className="terminal-content p-3 sm:p-4 overflow-y-auto"
-      style={{ height: '60vh', maxHeight: '300px', minHeight: '150px' }}
+      style={{ height: '70vh', minHeight: '200px' }}
     >
       <div className="message-container space-y-2 pb-4 relative z-10">
         {/* Welcome ASCII Art */}
@@ -42,14 +42,14 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
         
         {/* Initial welcome message */}
         <div className="flex items-start mb-6">
-          <div className="text-terminal-pink mr-2">rex@mohsin:~$</div>
+          <div className="text-terminal-pink mr-2">mohsin@terminal:~$</div>
           <motion.div 
             className="text-terminal-green font-mono"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
           >
-            Welcome to Rex. I'm Mohsin's inner voice. How can I connect with you today?
+            Welcome to my terminal. I'm Mohsin. How can we connect today?
           </motion.div>
         </div>
         
@@ -65,7 +65,7 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
         {/* Loading indicator */}
         {loading && (
           <div className="flex items-start mt-4">
-            <div className="text-terminal-pink mr-2">rex@mohsin:~$</div>
+            <div className="text-terminal-pink mr-2">mohsin@terminal:~$</div>
             <div className="text-terminal-text">
               <span className="typing-dots">
                 <span className="dot">.</span>
