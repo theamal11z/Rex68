@@ -23,6 +23,8 @@ const AdminDashboard: React.FC = () => {
   const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
   const [deleteConversationDialogOpen, setDeleteConversationDialogOpen] = useState<boolean>(false);
   const [userToDelete, setUserToDelete] = useState<string>("");
+  const [deleteContentDialogOpen, setDeleteContentDialogOpen] = useState<boolean>(false);
+  const [contentToDelete, setContentToDelete] = useState<Content | null>(null);
   const { toast } = useToast();
 
   // Form states
@@ -449,6 +451,42 @@ const AdminDashboard: React.FC = () => {
     }
   };
   
+  // Open delete content dialog
+  const openDeleteContentDialog = (content: Content) => {
+    setContentToDelete(content);
+    setDeleteContentDialogOpen(true);
+  };
+  
+  // Delete a content item
+  const handleDeleteContent = async () => {
+    if (!contentToDelete) return;
+    
+    try {
+      const response = await apiRequest('DELETE', `/api/contents/${contentToDelete.id}`, undefined);
+      
+      if (response.ok) {
+        // Update local state
+        setContents(contents.filter(content => content.id !== contentToDelete.id));
+        
+        toast({
+          title: "Success",
+          description: `${contentToDelete.type} deleted successfully`,
+        });
+      } else {
+        throw new Error('Failed to delete content');
+      }
+      
+      setDeleteContentDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to delete content:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete content",
+        variant: "destructive",
+      });
+    }
+  };
+  
   // Format a date for display
   const formatDate = (dateString: string | Date) => {
     const date = new Date(dateString);
@@ -569,6 +607,47 @@ const AdminDashboard: React.FC = () => {
               onClick={handleDeleteConversation}
             >
               Delete Conversation
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Content Dialog */}
+      <Dialog open={deleteContentDialogOpen} onOpenChange={setDeleteContentDialogOpen}>
+        <DialogContent className="bg-terminal-dark border border-terminal-muted text-terminal-text">
+          <DialogHeader>
+            <DialogTitle className="text-terminal-red">Delete Content</DialogTitle>
+            <DialogDescription className="text-terminal-muted">
+              Are you sure you want to delete this content? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {contentToDelete && (
+            <div className="py-4">
+              <div className="flex justify-between items-center mb-2">
+                <Badge className="bg-terminal-purple text-white">
+                  {contentToDelete.type}
+                </Badge>
+                <span className="text-terminal-muted text-xs">{formatDate(contentToDelete.timestamp)}</span>
+              </div>
+              <div className="text-terminal-text text-sm whitespace-pre-wrap break-words bg-terminal-bg p-2 rounded">
+                {contentToDelete.content}
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <button
+              className="bg-terminal-muted hover:bg-terminal-dark text-terminal-text py-1 px-3 rounded text-sm transition-colors"
+              onClick={() => setDeleteContentDialogOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="bg-terminal-red hover:bg-terminal-orange text-white py-1 px-3 rounded text-sm transition-colors"
+              onClick={handleDeleteContent}
+            >
+              Delete Content
             </button>
           </DialogFooter>
         </DialogContent>
