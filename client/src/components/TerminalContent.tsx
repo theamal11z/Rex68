@@ -21,18 +21,25 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
   return (
     <div 
       ref={contentRef} 
-      className="terminal-content p-4 overflow-y-auto"
-      style={{ height: 'calc(100vh - 180px)' }}
+      className="terminal-content p-4 overflow-y-auto flex-1 relative"
     >
-      <div className="message-container space-y-2 pb-20 relative z-10">
+      <div className="message-container space-y-2 pb-4 relative z-10">
         {/* Welcome ASCII Art */}
-        <div className="text-terminal-cyan text-xs leading-tight mb-4 font-mono whitespace-pre">
+        {/* Desktop logo */}
+        <div className="text-terminal-cyan text-xs leading-tight mb-4 font-mono whitespace-pre hidden sm:block">
 {`  ██████╗░███████╗██╗░░██╗
   ██╔══██╗██╔════╝╚██╗██╔╝
   ██████╔╝█████╗░░░╚███╔╝░
   ██╔══██╗██╔══╝░░░██╔██╗░
   ██║░░██║███████╗██╔╝╚██╗
   ╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝`}
+        </div>
+        
+        {/* Mobile logo */}
+        <div className="text-center mb-4 sm:hidden">
+          <div className="inline-block px-4 py-2 bg-terminal-pink text-terminal-dark text-2xl font-bold rounded-md">
+            REX
+          </div>
         </div>
         
         {/* System message */}
