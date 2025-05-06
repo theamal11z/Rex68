@@ -31,6 +31,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to retrieve messages" });
     }
   });
+  
+  // Endpoint to get all user IDs with conversations
+  app.get("/api/conversations", async (req: Request, res: Response) => {
+    try {
+      const userIds = await storage.getAllUserIds();
+      res.json(userIds);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve user IDs" });
+    }
+  });
+  
+  // Endpoint to delete a conversation by user ID
+  app.delete("/api/conversations/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const success = await storage.deleteConversation(userId);
+      
+      if (success) {
+        res.json({ success: true, message: "Conversation deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Conversation not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete conversation" });
+    }
+  });
+  
+  // Endpoint to generate an AI summary of a conversation
+  app.get("/api/conversations/:userId/summary", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const messages = await storage.getMessages(userId);
+      
+      if (messages.length === 0) {
+        return res.status(404).json({ message: "No messages found for this user" });
+      }
+      
+      // Get the API key for Gemini
+      const settingResponse = await storage.getSettingByKey("api_key");
+      const apiKey = settingResponse?.value || process.env.GEMINI_API_KEY || "";
+      
+      if (!apiKey) {
+        return res.status(500).json({ message: "API key not found" });
+      }
+      
+      // Prepare conversation for summarization
+      const conversationText = messages.map(msg => {
+        const role = msg.isFromUser ? "User" : "Rex";
+        return `${role}: ${msg.content}`;
+      }).join("\n");
+      
+      // Send to Gemini API for summarization
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Summarize the following conversation in 3-4 sentences, highlighting key topics, emotions, and any important points:\n\n${conversationText}`
+            }]
+          }]
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to generate summary: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      const summary = data.candidates[0].content.parts[0].text;
+      
+      res.json({ summary });
+    } catch (error) {
+      console.error("Summary generation error:", error);
+      res.status(500).json({ message: "Failed to generate conversation summary" });
+    }
+  });
 
   // Endpoint to save a message
   app.post("/api/messages", async (req: Request, res: Response) => {

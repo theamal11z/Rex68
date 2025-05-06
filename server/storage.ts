@@ -17,6 +17,8 @@ export interface IStorage {
   getMessages(userId: string): Promise<Message[]>;
   getMessagesLimited(userId: string, limit: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
+  getAllUserIds(): Promise<string[]>;
+  deleteConversation(userId: string): Promise<boolean>;
   
   // Setting operations
   getAllSettings(): Promise<Setting[]>;
@@ -116,6 +118,25 @@ export class MemStorage implements IStorage {
     const message = { ...insertMessage, id, timestamp };
     this.messages.push(message);
     return message;
+  }
+  
+  async getAllUserIds(): Promise<string[]> {
+    // Get unique user IDs from messages
+    const userIds = new Set<string>();
+    this.messages.forEach(message => {
+      userIds.add(message.userId);
+    });
+    return Array.from(userIds);
+  }
+  
+  async deleteConversation(userId: string): Promise<boolean> {
+    const initialLength = this.messages.length;
+    this.messages = this.messages.filter(message => message.userId !== userId);
+    
+    // Also delete the user's memory if it exists
+    this.memories.delete(userId);
+    
+    return initialLength > this.messages.length;
   }
 
   // Setting operations
@@ -230,6 +251,29 @@ export class DatabaseStorage implements IStorage {
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
     const [message] = await db.insert(messages).values(insertMessage).returning();
     return message;
+  }
+  
+  async getAllUserIds(): Promise<string[]> {
+    const result = await db
+      .selectDistinct({ userId: messages.userId })
+      .from(messages);
+    
+    return result.map(item => item.userId);
+  }
+  
+  async deleteConversation(userId: string): Promise<boolean> {
+    // Delete all messages for this user
+    const deleted = await db
+      .delete(messages)
+      .where(eq(messages.userId, userId))
+      .returning({ id: messages.id });
+    
+    // Also delete the user's memory if it exists
+    await db
+      .delete(memories)
+      .where(eq(memories.userId, userId));
+    
+    return deleted.length > 0;
   }
 
   // Setting operations

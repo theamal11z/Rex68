@@ -59,6 +59,22 @@ const AdminDashboard: React.FC = () => {
         const contentsData = await contentsResponse.json();
         setContents(contentsData);
 
+        // Fetch conversation user IDs if on logs tab
+        if (activeTab === 'logs') {
+          try {
+            const userIdsResponse = await apiRequest('GET', '/api/conversations', undefined);
+            const userIds = await userIdsResponse.json();
+            
+            const conversationsObj: Record<string, Message[]> = {};
+            userIds.forEach((userId: string) => {
+              conversationsObj[userId] = [];
+            });
+            setConversations(conversationsObj);
+          } catch (error) {
+            console.error('Failed to fetch conversation user IDs:', error);
+          }
+        }
+
         // Since we can't get all memories at once, we'll fetch them when needed
       } catch (error) {
         console.error('Failed to fetch admin data:', error);
@@ -73,7 +89,7 @@ const AdminDashboard: React.FC = () => {
     };
 
     fetchData();
-  }, [toast]);
+  }, [toast, activeTab]);
 
   // Handle form field changes
   const handleInputChange = (field: string, value: string) => {
@@ -344,6 +360,82 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Generate summary for a conversation
+  const [conversationSummary, setConversationSummary] = useState<string>("");
+  const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
+  const [deleteConversationDialogOpen, setDeleteConversationDialogOpen] = useState<boolean>(false);
+  const [userToDelete, setUserToDelete] = useState<string>("");
+  
+  const generateConversationSummary = async (userId: string) => {
+    if (!userId || conversations[userId]?.length === 0) {
+      toast({
+        title: "Error",
+        description: "No conversation data available to summarize",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSummaryLoading(true);
+    try {
+      const response = await apiRequest('GET', `/api/conversations/${userId}/summary`, undefined);
+      const data = await response.json();
+      
+      setConversationSummary(data.summary);
+    } catch (error) {
+      console.error('Failed to generate conversation summary:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate conversation summary",
+        variant: "destructive",
+      });
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+  
+  // Open the delete conversation dialog
+  const openDeleteConversationDialog = (userId: string) => {
+    setUserToDelete(userId);
+    setDeleteConversationDialogOpen(true);
+  };
+  
+  // Handle the deletion of a conversation
+  const handleDeleteConversation = async () => {
+    if (!userToDelete) return;
+    
+    try {
+      const response = await apiRequest('DELETE', `/api/conversations/${userToDelete}`, undefined);
+      
+      if (response.ok) {
+        // Update local state by removing this userId from conversations
+        const { [userToDelete]: removed, ...remainingConversations } = conversations;
+        setConversations(remainingConversations);
+        
+        // Clear active user if deleted
+        if (activeUserId === userToDelete) {
+          setActiveUserId('');
+          setConversationSummary('');
+        }
+        
+        toast({
+          title: "Success",
+          description: "Conversation deleted successfully",
+        });
+      } else {
+        throw new Error('Failed to delete conversation');
+      }
+      
+      setDeleteConversationDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete conversation",
+        variant: "destructive",
+      });
+    }
+  };
+  
   // Format a date for display
   const formatDate = (dateString: string | Date) => {
     const date = new Date(dateString);
@@ -428,6 +520,42 @@ const AdminDashboard: React.FC = () => {
               onClick={handleDeleteSetting}
             >
               Delete Guideline
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Conversation Dialog */}
+      <Dialog open={deleteConversationDialogOpen} onOpenChange={setDeleteConversationDialogOpen}>
+        <DialogContent className="bg-terminal-dark border border-terminal-muted text-terminal-text">
+          <DialogHeader>
+            <DialogTitle className="text-terminal-red">Delete Conversation</DialogTitle>
+            <DialogDescription className="text-terminal-muted">
+              Are you sure you want to delete this conversation? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="text-terminal-orange font-mono mb-2">
+              User ID: {userToDelete}
+            </div>
+            <div className="text-terminal-text text-sm bg-terminal-bg p-2 rounded">
+              This will permanently delete all messages for this user.
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <button
+              className="bg-terminal-muted hover:bg-terminal-dark text-terminal-text py-1 px-3 rounded text-sm transition-colors"
+              onClick={() => setDeleteConversationDialogOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="bg-terminal-red hover:bg-terminal-orange text-white py-1 px-3 rounded text-sm transition-colors"
+              onClick={handleDeleteConversation}
+            >
+              Delete Conversation
             </button>
           </DialogFooter>
         </DialogContent>
