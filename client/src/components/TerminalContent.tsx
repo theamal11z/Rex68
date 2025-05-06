@@ -48,10 +48,10 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
         </div>
         
         {/* Initial welcome message */}
-        <div className="flex items-start mb-6">
-          <div className="text-terminal-pink mr-2">rex@mohsin:~$</div>
+        <div className="flex flex-col sm:flex-row items-start mb-6">
+          <div className="text-terminal-pink sm:mr-2 mb-1 sm:mb-0 text-sm sm:text-base">rex@mohsin:~$</div>
           <motion.div 
-            className="text-terminal-green font-mono"
+            className="text-terminal-green font-mono text-sm sm:text-base"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
@@ -71,9 +71,9 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
         
         {/* Loading indicator */}
         {loading && (
-          <div className="flex items-start mt-4">
-            <div className="text-terminal-pink mr-2">rex@mohsin:~$</div>
-            <div className="text-terminal-text">
+          <div className="flex flex-col sm:flex-row items-start mt-4">
+            <div className="text-terminal-pink sm:mr-2 mb-1 sm:mb-0 text-sm sm:text-base">rex@mohsin:~$</div>
+            <div className="text-terminal-text text-sm sm:text-base">
               <span className="typing-dots">
                 <span className="dot">.</span>
                 <span className="dot">.</span>
