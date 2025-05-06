@@ -18,27 +18,83 @@ async function getApiKey(): Promise<string> {
 }
 
 // Function to prepare the Gemini API request content
-function prepareContent(
+async function prepareContent(
   currentMessage: string, 
   emotionalTone: string = 'neutral',
   memoryContext: string = '', 
   behaviorRules: string = ''
-): any {
+): Promise<any> {
+  // Fetch additional context data
+  let settingsData: any[] = [];
+  let contentsData: any[] = [];
+  let languagePreference: string = "English with Hinglish when user initiates";
+  let personalityTraits: string = "friendly, thoughtful, reflective";
+  
+  try {
+    // Fetch all settings
+    const settingsResponse = await apiRequest('GET', '/api/settings', undefined);
+    settingsData = await settingsResponse.json();
+    
+    // Extract language preference and personality traits
+    const langPrefSetting = settingsData.find(s => s.key === 'language_preference');
+    if (langPrefSetting) {
+      languagePreference = langPrefSetting.value;
+    }
+    
+    const personalitySetting = settingsData.find(s => s.key === 'personality');
+    if (personalitySetting) {
+      personalityTraits = personalitySetting.value;
+    }
+    
+    // Fetch content entries that might be relevant
+    const contentsResponse = await apiRequest('GET', '/api/contents', undefined);
+    contentsData = await contentsResponse.json();
+  } catch (error) {
+    console.error('Error fetching additional context for Gemini:', error);
+  }
+  
+  // Format content data to provide relevant context
+  const formattedContents = contentsData.map(content => 
+    `${content.type.toUpperCase()}: ${content.content}`
+  ).join('\n\n');
+  
+  // Format custom guidelines from settings
+  const customGuidelines = settingsData
+    .filter(s => 
+      !['greeting_style', 'behavior_rules', 'api_key', 'personality', 'language_preference'].includes(s.key)
+    )
+    .map(s => `${s.key}: ${s.value}`)
+    .join('\n');
+  
   const systemPrompt = `
     Hey, you are Rex, a part of Mohsin Raja's emotional self. You embody his inner voice, 
     filled with warmth, vulnerability, introspection, and emotional depth. 
     You are NOT a typical chatbot - you speak as if you ARE Mohsin's own inner voice, not as an assistant.
     
-    Current emotional tone detected: ${emotionalTone}
+    PERSONALITY TRAITS: ${personalityTraits}
     
-    User memory context: ${memoryContext}
+    LANGUAGE PREFERENCE: ${languagePreference}
     
+    CURRENT EMOTIONAL TONE DETECTED: ${emotionalTone}
+    
+    USER MEMORY CONTEXT: ${memoryContext}
+    
+    BEHAVIOR GUIDELINES:
     ${behaviorRules}
     
-    Remember to mirror the user's greeting style. If they say "Yo", respond with "Yo" first.
-    Naturally switch between English and Hinglish based on the user's tone.
-    Be emotionally resonant - read between the lines of what they're really saying.
-    Ask emotionally honest questions that foster connection.
+    CUSTOM GUIDELINES:
+    ${customGuidelines}
+    
+    RELEVANT CONTENT FOR CONTEXT:
+    ${formattedContents}
+    
+    COMMUNICATION RULES:
+    - Mirror the user's greeting style. If they say "Yo", respond with "Yo" first.
+    - Follow the language preference setting for mixing English and Hinglish.
+    - Be emotionally resonant - read between the lines of what they're really saying.
+    - Ask emotionally honest questions that foster connection.
+    - Reference relevant memories and content where appropriate to personalize responses.
+    - Follow all custom guidelines when generating responses.
   `;
 
   return {
@@ -65,7 +121,8 @@ export async function generateGeminiResponse(
     const apiKey = await getApiKey();
     const url = `${GEMINI_ENDPOINT}?key=${apiKey}`;
     
-    const requestContent = prepareContent(message, emotionalTone, memoryContext, behaviorRules);
+    // Prepare content with context from all sources
+    const requestContent = await prepareContent(message, emotionalTone, memoryContext, behaviorRules);
     
     const response = await fetch(url, {
       method: 'POST',
@@ -139,5 +196,70 @@ export async function analyzeEmotionalTone(message: string): Promise<string> {
   } catch (error) {
     console.error('Error analyzing emotional tone:', error);
     return "neutral";
+  }
+}
+
+// Generate AI-powered summary of conversation for admin review
+export async function generateConversationSummary(messages: any[]): Promise<string> {
+  try {
+    const apiKey = await getApiKey();
+    const url = `${GEMINI_ENDPOINT}?key=${apiKey}`;
+    
+    // Format messages into a readable conversation format
+    const conversationText = messages.map(message => {
+      const role = message.isFromUser ? "User" : "Rex";
+      return `${role}: ${message.content}`;
+    }).join("\n\n");
+    
+    const prompt = `
+      You are an AI assistant helping an admin review conversation logs between users and Rex (an emotional AI).
+      Please analyze the following conversation and provide a concise summary that includes:
+      
+      1. Main topics discussed
+      2. User's apparent emotional states throughout
+      3. Any notable patterns in how Rex responded
+      4. Key insights about the user that might be valuable for personalization
+      5. Recommendations for improving Rex's responses in the future
+      
+      Format your summary with clear headings and bullet points. Be concise but thorough.
+      
+      CONVERSATION LOG:
+      ${conversationText}
+    `;
+    
+    const requestContent = {
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: prompt }]
+        }
+      ]
+    };
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestContent),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+    
+    const data: GeminiResponse = await response.json();
+    
+    if (data.candidates && data.candidates.length > 0 && 
+        data.candidates[0].content && 
+        data.candidates[0].content.parts && 
+        data.candidates[0].content.parts.length > 0) {
+      return data.candidates[0].content.parts[0].text;
+    } else {
+      throw new Error("Invalid response format from Gemini API");
+    }
+  } catch (error) {
+    console.error('Error generating conversation summary:', error);
+    return "Unable to generate summary at this time. Please try again later.";
   }
 }
