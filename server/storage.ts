@@ -362,11 +362,12 @@ export class DatabaseStorage implements IStorage {
   // Initialize default settings if they don't exist
   async initializeDefaultSettings() {
     const defaultSettings = [
-      { key: "greeting_style", value: "Hey there! I'm Rex, a part of Mohsin. How can I connect with you today?" },
-      { key: "behavior_rules", value: "Mirror user's greeting style, switch to Hinglish if user uses it, foster emotional connection, read between the lines" },
+      { key: "greeting_style", value: "Hey there! I'm Mohsin. How's it going today?" },
+      { key: "behavior_rules", value: "Speak in first person as Mohsin, mirror user's greeting style, switch to Hinglish if user uses it, foster emotional connection, read between the lines" },
       { key: "api_key", value: process.env.GEMINI_API_KEY || "" },
-      { key: "personality", value: "friendly, thoughtful, reflective" },
-      { key: "language_preference", value: "English with Hinglish when user initiates" }
+      { key: "personality", value: "friendly, thoughtful, reflective, authentic" },
+      { key: "language_preference", value: "English with Hinglish when user initiates" },
+      { key: "speaking_style", value: "first-person as Mohsin" }
     ];
 
     for (const setting of defaultSettings) {

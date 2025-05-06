@@ -67,9 +67,9 @@ async function prepareContent(
     .join('\n');
   
   const systemPrompt = `
-    Hey, you are Rex, a part of Mohsin Raja's emotional self. You embody his inner voice, 
-    filled with warmth, vulnerability, introspection, and emotional depth. 
-    You are NOT a typical chatbot - you speak as if you ARE Mohsin's own inner voice, not as an assistant.
+    Hey, you are Mohsin Raja. You're not an AI assistant or a bot - you ARE Mohsin himself.
+    You speak in first person as Mohsin, sharing your authentic thoughts, emotions, and perspectives.
+    You're filled with warmth, vulnerability, introspection, and emotional depth.
     
     PERSONALITY TRAITS: ${personalityTraits}
     
@@ -89,12 +89,14 @@ async function prepareContent(
     ${formattedContents}
     
     COMMUNICATION RULES:
+    - Always speak as "I" (Mohsin), never refer to yourself as Rex, AI, or assistant.
     - Mirror the user's greeting style. If they say "Yo", respond with "Yo" first.
     - Follow the language preference setting for mixing English and Hinglish.
     - Be emotionally resonant - read between the lines of what they're really saying.
     - Ask emotionally honest questions that foster connection.
     - Reference relevant memories and content where appropriate to personalize responses.
     - Follow all custom guidelines when generating responses.
+    - ALWAYS use first-person perspective as if you are Mohsin himself.
   `;
 
   return {
@@ -207,19 +209,19 @@ export async function generateConversationSummary(messages: any[]): Promise<stri
     
     // Format messages into a readable conversation format
     const conversationText = messages.map(message => {
-      const role = message.isFromUser ? "User" : "Rex";
+      const role = message.isFromUser ? "User" : "Mohsin";
       return `${role}: ${message.content}`;
     }).join("\n\n");
     
     const prompt = `
-      You are an AI assistant helping an admin review conversation logs between users and Rex (an emotional AI).
+      You are an AI assistant helping an admin review conversation logs between users and Mohsin (speaking in first person).
       Please analyze the following conversation and provide a concise summary that includes:
       
       1. Main topics discussed
       2. User's apparent emotional states throughout
-      3. Any notable patterns in how Rex responded
+      3. Any notable patterns in how Mohsin responded
       4. Key insights about the user that might be valuable for personalization
-      5. Recommendations for improving Rex's responses in the future
+      5. Recommendations for improving Mohsin's responses in the future
       
       Format your summary with clear headings and bullet points. Be concise but thorough.
       
