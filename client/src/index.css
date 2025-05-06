@@ -141,3 +141,17 @@
 .font-mono {
   font-family: 'JetBrains Mono', Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+/* Touch action for better mobile experience */
+.touch-action-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile responsiveness adjustments */
+@media (max-width: 640px) {
+  .terminal-content {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
