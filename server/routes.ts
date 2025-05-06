@@ -171,9 +171,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Validate admin credentials
   app.post("/api/auth/admin", (req: Request, res: Response) => {
-    const { email, password } = req.body;
+    const { password } = req.body;
     
-    if (email === "theamal@rex.com" && password === "maothiskian11") {
+    // For demo purposes, using a simple password
+    if (password === "admin123") {
       res.json({ success: true });
     } else {
       res.status(401).json({ success: false, message: "Invalid credentials" });
