@@ -12,16 +12,16 @@ const TerminalHeader: React.FC = () => {
   }, []);
 
   return (
-    <div className="terminal-header flex items-center justify-between p-1 sm:p-2">
+    <div className="terminal-header flex items-center justify-between p-2">
       <div className="flex space-x-2">
-        <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-terminal-orange"></div>
-        <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-terminal-green"></div>
-        <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-terminal-cyan"></div>
+        <div className="w-3 h-3 rounded-full bg-terminal-orange"></div>
+        <div className="w-3 h-3 rounded-full bg-terminal-green"></div>
+        <div className="w-3 h-3 rounded-full bg-terminal-cyan"></div>
       </div>
-      <div className="text-xs sm:text-sm text-terminal-text font-mono">
-        <span className="hidden sm:inline">Rex v1.0.0 •</span> {time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+      <div className="text-sm text-terminal-text font-mono">
+        Rex v1.0.0 • {time.toLocaleTimeString()}
       </div>
-      <div className="w-4 sm:w-6">
+      <div className="w-6">
         {/* Placeholder to ensure the header is balanced */}
       </div>
     </div>

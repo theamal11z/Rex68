@@ -21,22 +21,18 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
   return (
     <div 
       ref={contentRef} 
-      className="terminal-content p-2 sm:p-4 overflow-y-auto flex-grow"
+      className="terminal-content p-4 overflow-y-auto"
+      style={{ height: 'calc(100vh - 180px)' }}
     >
       <div className="message-container space-y-2 pb-20 relative z-10">
-        {/* Welcome ASCII Art - Hidden on smallest screens */}
-        <div className="text-terminal-cyan text-xs leading-tight mb-4 font-mono whitespace-pre hidden sm:block">
+        {/* Welcome ASCII Art */}
+        <div className="text-terminal-cyan text-xs leading-tight mb-4 font-mono whitespace-pre">
 {`  ██████╗░███████╗██╗░░██╗
   ██╔══██╗██╔════╝╚██╗██╔╝
   ██████╔╝█████╗░░░╚███╔╝░
   ██╔══██╗██╔══╝░░░██╔██╗░
   ██║░░██║███████╗██╔╝╚██╗
   ╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝`}
-        </div>
-        
-        {/* Smaller logo for mobile */}
-        <div className="text-terminal-cyan text-lg font-bold mb-2 sm:hidden">
-          REX
         </div>
         
         {/* System message */}
@@ -46,10 +42,9 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
         
         {/* Initial welcome message */}
         <div className="flex items-start mb-6">
-          <div className="text-terminal-pink mr-2 text-sm sm:text-base whitespace-nowrap hidden sm:block">rex@mohsin:~$</div>
-          <div className="text-terminal-pink mr-2 text-sm sm:text-base whitespace-nowrap sm:hidden">rex:</div>
+          <div className="text-terminal-pink mr-2">rex@mohsin:~$</div>
           <motion.div 
-            className="text-terminal-green font-mono text-sm sm:text-base flex-1"
+            className="text-terminal-green font-mono"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
@@ -70,8 +65,7 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
         {/* Loading indicator */}
         {loading && (
           <div className="flex items-start mt-4">
-            <div className="text-terminal-pink mr-2 text-sm sm:text-base whitespace-nowrap hidden sm:block">rex@mohsin:~$</div>
-            <div className="text-terminal-pink mr-2 text-sm sm:text-base whitespace-nowrap sm:hidden">rex:</div>
+            <div className="text-terminal-pink mr-2">rex@mohsin:~$</div>
             <div className="text-terminal-text">
               <span className="typing-dots">
                 <span className="dot">.</span>
