@@ -8,16 +8,16 @@ interface AdminLoginProps {
 }
 
 const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // For demo purposes, the password is "admin123"
   const handleLogin = async () => {
-    if (!password) {
+    if (!email || !password) {
       toast({
         title: "Error",
-        description: "Please enter the admin password",
+        description: "Please enter both email and password",
         variant: "destructive",
       });
       return;
@@ -26,6 +26,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
     setLoading(true);
     try {
       const response = await apiRequest('POST', '/api/auth/admin', {
+        email,
         password
       });
 
@@ -40,25 +41,15 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
       } else {
         toast({
           title: "Authentication Failed",
-          description: "Invalid password. Default is 'admin123'",
+          description: "Invalid email or password",
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error("Auth error:", error);
-      // For demo purposes, allow login with hardcoded password
-      if (password === 'admin123') {
-        toast({
-          title: "Demo Login",
-          description: "Logged in with demo credentials",
-        });
-        onSuccess();
-        return;
-      }
-      
       toast({
         title: "Error",
-        description: "Failed to authenticate. Try 'admin123'",
+        description: "Failed to authenticate",
         variant: "destructive",
       });
     } finally {
@@ -82,6 +73,19 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
       <h2 className="text-xl text-terminal-cyan mb-4 font-mono">Admin Authentication</h2>
       <div className="space-y-4">
         <div>
+          <label className="block text-terminal-muted mb-2">Email</label>
+          <div className="relative">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-3 rounded font-mono"
+              placeholder="Enter admin email..."
+              autoFocus
+            />
+          </div>
+        </div>
+        <div>
           <label className="block text-terminal-muted mb-2">Password</label>
           <div className="relative">
             <input
@@ -91,13 +95,11 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
               onKeyDown={handleKeyDown}
               className="w-full bg-terminal-bg text-terminal-text border border-terminal-muted p-3 rounded font-mono"
               placeholder="Enter admin password..."
-              autoFocus
             />
             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-terminal-muted text-sm">
               <span className="blink-cursor">|</span>
             </div>
           </div>
-          <p className="text-terminal-muted text-xs mt-2">Default password: admin123</p>
         </div>
         <button
           onClick={handleLogin}
