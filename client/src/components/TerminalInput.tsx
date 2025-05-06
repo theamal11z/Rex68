@@ -17,18 +17,20 @@ const TerminalInput: React.FC<TerminalInputProps> = ({ onSendMessage, disabled }
 
   return (
     <div className="bg-terminal-dark p-4 border-t border-terminal-muted">
-      <div className="flex items-center">
-        <div className="text-terminal-orange mr-2">user@rex:~$</div>
-        <input
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          className="bg-transparent border-none outline-none flex-1 text-terminal-text placeholder-terminal-muted"
-          placeholder={disabled ? "Wait for Rex to respond..." : "Type your message..."}
-        />
-        {!disabled && <div className="cursor w-2 h-4 bg-terminal-text animate-blink"></div>}
+      <div className="flex flex-wrap items-center">
+        <div className="text-terminal-orange mr-2 whitespace-nowrap">user@rex:~$</div>
+        <div className="flex-1 min-w-0 flex items-center">
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            className="bg-transparent border-none outline-none w-full text-terminal-text placeholder-terminal-muted"
+            placeholder={disabled ? "Wait for Rex to respond..." : "Type your message..."}
+          />
+          {!disabled && <div className="cursor w-2 h-4 bg-terminal-text animate-blink ml-1 flex-shrink-0"></div>}
+        </div>
       </div>
     </div>
   );

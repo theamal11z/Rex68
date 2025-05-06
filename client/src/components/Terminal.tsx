@@ -41,7 +41,7 @@ const Terminal: React.FC = () => {
 
   return (
     <motion.div
-      className="container mx-auto px-4 py-8 max-w-4xl"
+      className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-4xl"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}

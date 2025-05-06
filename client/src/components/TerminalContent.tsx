@@ -21,8 +21,8 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
   return (
     <div 
       ref={contentRef} 
-      className="terminal-content p-4 overflow-y-auto"
-      style={{ height: 'calc(100vh - 180px)' }}
+      className="terminal-content p-3 sm:p-4 overflow-y-auto"
+      style={{ height: 'calc(100vh - 180px)', maxHeight: '400px', minHeight: '250px' }}
     >
       <div className="message-container space-y-2 pb-20 relative z-10">
         {/* Welcome ASCII Art */}
