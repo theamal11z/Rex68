@@ -1,4 +1,5 @@
 import type { Express, Request, Response } from "express";
+import fetch from "node-fetch";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertMessageSchema, insertMemorySchema, insertSettingSchema, insertContentSchema } from "@shared/schema";
@@ -10,13 +11,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint to get Gemini API key
   app.get("/api/gemini-key", async (req: Request, res: Response) => {
     try {
+      // Always prioritize environment variable (fresh value)
+      const envApiKey = process.env.GEMINI_API_KEY;
+      console.log("API Key Status:", {
+        envKeyExists: !!envApiKey,
+        envKeyLength: envApiKey ? envApiKey.length : 0,
+      });
+      
+      if (envApiKey) {
+        // Return the API key from environment
+        res.json({ key: envApiKey });
+        return;
+      }
+      
+      // Fall back to database if env variable not set
       const setting = await storage.getSettingByKey("api_key");
-      if (setting) {
+      if (setting && setting.value) {
+        console.log("Using database API key, length:", setting.value.length);
         res.json({ key: setting.value });
       } else {
+        console.log("API key not found in env or database");
         res.status(404).json({ message: "API key not found" });
       }
     } catch (error) {
+      console.error("API key retrieval error:", error);
       res.status(500).json({ message: "Failed to retrieve API key" });
     }
   });
@@ -68,11 +86,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "No messages found for this user" });
       }
       
-      // Get the API key for Gemini
-      const settingResponse = await storage.getSettingByKey("api_key");
-      const apiKey = settingResponse?.value || process.env.GEMINI_API_KEY || "";
+      // Get the API key for Gemini - prioritize environment variable
+      const envApiKey = process.env.GEMINI_API_KEY;
+      console.log("Using API key from environment variable:", {
+        exists: !!envApiKey,
+        length: envApiKey ? envApiKey.length : 0
+      });
+      
+      // Only fall back to database if environment variable is not set
+      let apiKey = envApiKey;
+      if (!apiKey) {
+        const settingResponse = await storage.getSettingByKey("api_key");
+        apiKey = settingResponse?.value || "";
+        console.log("Using API key from database:", {
+          exists: !!apiKey,
+          length: apiKey ? apiKey.length : 0
+        });
+      }
       
       if (!apiKey) {
+        console.error("No API key found in environment or database");
         return res.status(500).json({ message: "API key not found" });
       }
       
@@ -83,29 +116,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).join("\n");
       
       // Send to Gemini API for summarization
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [{
-            role: "user",
-            parts: [{
-              text: `Summarize the following conversation in 3-4 sentences, highlighting key topics, emotions, and any important points:\n\n${conversationText}`
-            }]
-          }]
-        })
+      console.log("Gemini API Request:", {
+        url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        apiKeyLength: apiKey.length,
+        apiKeyStart: apiKey.substring(0, 5),
+        conversationLength: conversationText.length
       });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to generate summary: ${response.statusText}`);
+
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
+          },
+          body: JSON.stringify({
+            contents: [{
+              role: "user",
+              parts: [{
+                text: `Summarize the following conversation in 3-4 sentences, highlighting key topics, emotions, and any important points:\n\n${conversationText}`
+              }]
+            }]
+          })
+        });
+        
+        console.log("Gemini API Response Status:", response.status, response.statusText);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Gemini API Error Response:", errorText);
+          throw new Error(`Failed to generate summary: ${response.status} ${response.statusText}\nDetails: ${errorText}`);
+        }
+        
+        const data = await response.json() as {
+          candidates: Array<{
+            content: {
+              parts: Array<{
+                text: string
+              }>
+            }
+          }>
+        };
+        console.log("Gemini API Success Response:", JSON.stringify(data).substring(0, 200) + "...");
+        
+        const summary = data.candidates[0].content.parts[0].text;
+        res.json({ summary });
+      } catch (error) {
+        console.error("Gemini API call error:", error);
+        throw error; // Rethrow to be caught by the outer catch block
       }
-      
-      const data = await response.json();
-      const summary = data.candidates[0].content.parts[0].text;
-      
-      res.json({ summary });
     } catch (error) {
       console.error("Summary generation error:", error);
       res.status(500).json({ message: "Failed to generate conversation summary" });
