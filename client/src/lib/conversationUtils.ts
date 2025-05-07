@@ -4,6 +4,9 @@ import { generateAbstractiveSummary } from '@/lib/gemini';
 // Maximum number of tokens to include in context window (up to 1,048,576 for Gemini 2.0 Flash)
 const MAX_CONTEXT_TOKENS = 1048576; // Updated for Gemini 2.0 Flash (1M token window)
 
+// Token threshold for including full context before summarization kicks in
+export const FULL_CONTEXT_THRESHOLD = MAX_CONTEXT_TOKENS * 0.2; // ~20% of max window
+
 // Weights for different message types
 const WEIGHT_CONFIG = {
   // Recent messages get higher weight
@@ -216,6 +219,13 @@ function formatMessageForCompression(message: Message): string {
  */
 export async function adaptiveContextWindow(messages: Message[]): Promise<string> {
   if (!messages || messages.length === 0) return '';
+  // Compute total tokens in current message set
+  const totalTokens = messages.reduce((sum, m) => sum + estimateTokens(m.content), 0);
+  // If under threshold, return full context uncompressed
+  if (totalTokens <= FULL_CONTEXT_THRESHOLD) {
+    return messages.map(formatMessageForCompression).join('\n');
+  }
+  // For small message counts, also return full context
   if (messages.length <= SHORT_TERM_BUFFER_SIZE) {
     return messages.map(formatMessageForCompression).join('\n');
   }

@@ -166,61 +166,53 @@ async function prepareContent(
   };
 }
 
+// Sends a prepared request to Gemini and returns its text response
+async function sendGeminiRequest(requestContent: any): Promise<string> {
+  const apiKey = await getApiKey();
+  const url = `${GEMINI_ENDPOINT}?key=${apiKey}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestContent)
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Gemini API error: ${response.status} ${errorText}`);
+  }
+  const data: GeminiResponse = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (text) return text;
+  throw new Error('Invalid response format from Gemini API');
+}
+
 // Main function to generate response from Gemini
 export async function generateGeminiResponse(
   message: string,
   emotionalTone: string = 'neutral',
   memoryContext: any = null,
   behaviorRules: string = '',
-  previousMessages: any[] = []
+  previousMessages: any[] = [],
+  twoStep: boolean = false
 ): Promise<string> {
   try {
-    console.log('Starting Gemini response generation...');
-    const apiKey = await getApiKey();
-    const url = `${GEMINI_ENDPOINT}?key=${apiKey}`;
-    
-    // Log memory and conversation stats for debugging
-    if (memoryContext) {
-      console.log(`Memory context provided: ${typeof memoryContext === 'string' ? 'string' : 'object'}`);
-      if (typeof memoryContext !== 'string') {
-        console.log(`Memory topics count: ${memoryContext.topics ? Object.keys(memoryContext.topics).length : 0}`);
-      }
+    // Two-step chain-of-thought reasoning
+    if (twoStep) {
+      console.log('Gemini two-step: planning phase');
+      const planRules = behaviorRules + '\n- Think step by step and outline a numbered plan.';
+      const planPayload = await prepareContent(message, emotionalTone, memoryContext, planRules, previousMessages);
+      const planText = await sendGeminiRequest(planPayload);
+      console.log('Planning result:', planText);
+
+      console.log('Gemini two-step: answer phase');
+      const answerRules = behaviorRules + '\n- Use the above plan to answer the user fully.\nPlan:\n' + planText;
+      const answerPayload = await prepareContent(message, emotionalTone, memoryContext, answerRules, previousMessages);
+      const finalAnswer = await sendGeminiRequest(answerPayload);
+      return finalAnswer;
     }
-    
-    if (previousMessages && previousMessages.length > 0) {
-      console.log(`Previous messages provided: ${previousMessages.length}`);
-    }
-    
-    // Prepare content with context from all sources
-    const requestContent = await prepareContent(message, emotionalTone, memoryContext, behaviorRules, previousMessages);
-    
-    console.log('Sending request to Gemini API...');
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestContent),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API error: ${response.status} ${errorText}`);
-    }
-    
-    const data: GeminiResponse = await response.json();
-    console.log('Received response from Gemini API');
-    
-    if (data.candidates && data.candidates.length > 0 && 
-        data.candidates[0].content && 
-        data.candidates[0].content.parts && 
-        data.candidates[0].content.parts.length > 0) {
-      const responseText = data.candidates[0].content.parts[0].text;
-      console.log(`Generated response (${responseText.length} chars)`);
-      return responseText;
-    } else {
-      throw new Error("Invalid response format from Gemini API");
-    }
+
+    // Single-step generation
+    const payload = await prepareContent(message, emotionalTone, memoryContext, behaviorRules, previousMessages);
+    return await sendGeminiRequest(payload);
   } catch (error) {
     console.error('Error generating response from Gemini:', error);
     return "I seem to be having trouble connecting with my thoughts right now. Can you give me a moment?";
