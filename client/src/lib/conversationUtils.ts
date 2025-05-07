@@ -1,7 +1,8 @@
 import { Message } from '@/types';
+import { generateAbstractiveSummary } from '@/lib/gemini';
 
-// Maximum number of tokens to include in context window
-const MAX_CONTEXT_TOKENS = 4096; // Adjust based on Gemini's actual limits
+// Maximum number of tokens to include in context window (up to 1,048,576 for Gemini 2.0 Flash)
+const MAX_CONTEXT_TOKENS = 1048576; // Updated for Gemini 2.0 Flash (1M token window)
 
 // Weights for different message types
 const WEIGHT_CONFIG = {
@@ -194,6 +195,9 @@ export function compressConversation(messages: Message[]): string {
   return result;
 }
 
+// Number of recent messages to keep in full detail for adaptive window
+export const SHORT_TERM_BUFFER_SIZE = 5;
+
 /**
  * Formats a message for inclusion in compressed output
  */
@@ -205,4 +209,24 @@ function formatMessageForCompression(message: Message): string {
     : message.content;
   
   return `${sender}: ${content}`;
+}
+
+/**
+ * Builds a combined context window using LLM-based summaries for long-term + detailed short-term
+ */
+export async function adaptiveContextWindow(messages: Message[]): Promise<string> {
+  if (!messages || messages.length === 0) return '';
+  if (messages.length <= SHORT_TERM_BUFFER_SIZE) {
+    return messages.map(formatMessageForCompression).join('\n');
+  }
+  const longTerm = messages.slice(0, messages.length - SHORT_TERM_BUFFER_SIZE);
+  const shortTerm = messages.slice(messages.length - SHORT_TERM_BUFFER_SIZE);
+  
+  // Use LLM to get an abstractive summary of the older messages
+  const longTermText = longTerm.map(formatMessageForCompression).join('\n');
+  const summary = await generateAbstractiveSummary(longTermText);
+  
+  let output = '== Long-Term Summary ==\n' + summary + '\n\n';
+  output += '== Recent Messages ==\n' + shortTerm.map(formatMessageForCompression).join('\n');
+  return output;
 }

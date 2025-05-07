@@ -17,7 +17,7 @@ async function getApiKey(): Promise<string> {
   }
 }
 
-import { selectRelevantMessages, compressConversation } from './conversationUtils';
+import { selectRelevantMessages, adaptiveContextWindow } from './conversationUtils';
 import { formatMemoryForPrompt, getRelevantMemories } from './memoryManager';
 
 // Function to prepare the Gemini API request content
@@ -70,6 +70,23 @@ async function prepareContent(
     .map(s => `${s.key}: ${s.value}`)
     .join('\n');
   
+  // Retrieve dynamic prompt settings
+  const domainConstraintSetting = settingsData.find(s => s.key === 'domain_constraints');
+  const domainConstraints = domainConstraintSetting ? domainConstraintSetting.value : '';
+  const styleSetting = settingsData.find(s => s.key === 'tone_style');
+  const styleTone = styleSetting ? styleSetting.value : '';
+  let topicsForPrompt = '';
+  if (memoryContext && typeof memoryContext !== 'string' && memoryContext.topics) {
+    // Cast topic entries to any[] for TS safety
+    const topicsArray = Object.values(memoryContext.topics) as any[];
+    // Sort by relevance descending
+    topicsArray.sort((a: any, b: any) => b.relevance - a.relevance);
+    topicsForPrompt = topicsArray
+      .slice(0, 3)
+      .map((t: any) => t.name)
+      .join(', ');
+  }
+
   // Process conversation history and memory optimally
   let formattedMemoryContext = '';
   let conversationHistory = '';
@@ -78,8 +95,8 @@ async function prepareContent(
   if (previousMessages && previousMessages.length > 0) {
     // Prioritize messages based on relevance
     const relevantMessages = selectRelevantMessages(previousMessages, memoryContext);
-    // Create a compressed representation of the conversation
-    conversationHistory = "CONVERSATION HISTORY:\n" + compressConversation(relevantMessages);
+    // Build adaptive context window with LLM-based summarization then await
+    conversationHistory = "CONVERSATION HISTORY:\n" + await adaptiveContextWindow(relevantMessages);
   }
   
   // Format memory context based on current message
@@ -103,6 +120,12 @@ async function prepareContent(
     PERSONALITY TRAITS: ${personalityTraits}
     
     LANGUAGE PREFERENCE: ${languagePreference}
+    
+    DOMAIN CONSTRAINTS: ${domainConstraints}
+    
+    STYLE/TONE: ${styleTone}
+    
+    FOCUS TOPICS: ${topicsForPrompt}
     
     CURRENT EMOTIONAL TONE DETECTED: ${emotionalTone}
     
@@ -312,5 +335,30 @@ export async function generateConversationSummary(messages: any[]): Promise<stri
   } catch (error) {
     console.error('Error generating conversation summary:', error);
     return "Unable to generate summary at this time. Please try again later.";
+  }
+}
+
+// Export LLM-based summary helper
+export async function generateAbstractiveSummary(text: string): Promise<string> {
+  try {
+    const apiKey = await getApiKey();
+    const url = `${GEMINI_ENDPOINT}?key=${apiKey}`;
+    const requestContent = {
+      contents: [
+        { role: 'system', parts: [{ text: 'You are a summarization assistant. Provide a concise and clear summary of the following text.' }] },
+        { role: 'user', parts: [{ text }] }
+      ]
+    };
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestContent)
+    });
+    if (!response.ok) throw new Error(`Summary API error: ${response.status}`);
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  } catch (error) {
+    console.error('Abstractive summary failed:', error);
+    return '';
   }
 }
