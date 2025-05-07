@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiRequest } from '@/lib/queryClient';
 import { generateGeminiResponse, analyzeEmotionalTone } from '@/lib/gemini';
+import { updateMemoryFromMessage } from '@/lib/memoryManager';
 import { Message, Memory, Setting } from '@/types';
 import useLocalStorage from './useLocalStorage';
 
@@ -87,35 +88,35 @@ export default function useConversation(): UseConversationResult {
     return behaviorSetting ? behaviorSetting.value : '';
   }, [settings]);
 
-  // Update memory with context
-  const updateMemory = useCallback(async (content: string) => {
-    if (!userId) return;
-    
-    // Create or update memory context
-    const context = memory?.context || {};
-    
-    // Attempt to analyze message for relevant context
-    // This is a simplified version - in a real app, you'd want more sophisticated context extraction
-    const currentDate = new Date().toISOString();
-    
-    // Update context with the latest message
-    const updatedContext = {
-      ...context,
-      lastMessage: content,
-      lastInteractionDate: currentDate,
-      interactionCount: (context.interactionCount || 0) + 1,
-    };
+  // Update memory with context - enhanced version
+  const updateMemory = useCallback(async (content: string, emotionalTone: string) => {
+    if (!userId) return null;
     
     try {
-      const response = await apiRequest('POST', '/api/memory', {
-        userId,
-        context: updatedContext
-      });
+      console.log(`Updating memory for user ${userId} with emotional tone: ${emotionalTone}`);
       
-      if (response.ok) {
-        const updatedMemory = await response.json();
+      // Create message object for memory update
+      const messageObj: Partial<Message> = {
+        userId,
+        content,
+        isFromUser: 1,
+        timestamp: new Date()
+      };
+      
+      // Use enhanced memory management
+      const updatedMemory = await updateMemoryFromMessage(
+        userId,
+        messageObj as Message,
+        emotionalTone,
+        memory
+      );
+      
+      if (updatedMemory) {
+        console.log('Memory updated successfully with structured data');
         setMemory(updatedMemory);
         return updatedMemory;
+      } else {
+        console.warn('Memory update returned null');
       }
     } catch (error) {
       console.error('Failed to update memory:', error);
@@ -146,8 +147,7 @@ export default function useConversation(): UseConversationResult {
       const userMessageResponse = await apiRequest('POST', '/api/messages', userMessage);
       const savedUserMessage = await userMessageResponse.json();
       
-      // Update memory with user's message
-      await updateMemory(content);
+      // Memory is now updated earlier in the flow with emotional tone included
       
       // Analyze emotional tone
       const emotionalTone = await analyzeEmotionalTone(content);
@@ -158,12 +158,19 @@ export default function useConversation(): UseConversationResult {
       // Get behavior rules
       const behaviorRules = getBehaviorRules();
       
-      // Generate response from Gemini
+      // Update memory with user's message and emotional tone
+      await updateMemory(content, emotionalTone);
+      
+      // Prepare memory context object
+      const memoryContextObj = memory ? memory.context : null;
+      
+      // Generate response from Gemini with enhanced context management
       const responseText = await generateGeminiResponse(
         content, 
         emotionalTone,
-        memoryContextString,
-        behaviorRules
+        memoryContextObj,
+        behaviorRules,
+        messages // Pass previous messages for context
       );
       
       // Create Mohsin's response

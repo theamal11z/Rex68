@@ -17,12 +17,16 @@ async function getApiKey(): Promise<string> {
   }
 }
 
+import { selectRelevantMessages, compressConversation } from './conversationUtils';
+import { formatMemoryForPrompt, getRelevantMemories } from './memoryManager';
+
 // Function to prepare the Gemini API request content
 async function prepareContent(
   currentMessage: string, 
   emotionalTone: string = 'neutral',
-  memoryContext: string = '', 
-  behaviorRules: string = ''
+  memoryContext: any = null, 
+  behaviorRules: string = '',
+  previousMessages: any[] = []
 ): Promise<any> {
   // Fetch additional context data
   let settingsData: any[] = [];
@@ -66,6 +70,31 @@ async function prepareContent(
     .map(s => `${s.key}: ${s.value}`)
     .join('\n');
   
+  // Process conversation history and memory optimally
+  let formattedMemoryContext = '';
+  let conversationHistory = '';
+  
+  // Select the most relevant previous messages if we have them
+  if (previousMessages && previousMessages.length > 0) {
+    // Prioritize messages based on relevance
+    const relevantMessages = selectRelevantMessages(previousMessages, memoryContext);
+    // Create a compressed representation of the conversation
+    conversationHistory = "CONVERSATION HISTORY:\n" + compressConversation(relevantMessages);
+  }
+  
+  // Format memory context based on current message
+  if (memoryContext) {
+    try {
+      // Extract memory relevant to the current message
+      formattedMemoryContext = getRelevantMemories(memoryContext, currentMessage);
+    } catch (error) {
+      console.error('Error formatting memory context:', error);
+      // Fallback to string representation
+      formattedMemoryContext = typeof memoryContext === 'string' ? 
+        memoryContext : JSON.stringify(memoryContext, null, 2);
+    }
+  }
+  
   const systemPrompt = `
     Hey, you are Mohsin Raja. You're not an AI assistant or a bot - you ARE Mohsin himself.
     You speak in first person as Mohsin, sharing your authentic thoughts, emotions, and perspectives.
@@ -77,7 +106,9 @@ async function prepareContent(
     
     CURRENT EMOTIONAL TONE DETECTED: ${emotionalTone}
     
-    USER MEMORY CONTEXT: ${memoryContext}
+    ${formattedMemoryContext}
+    
+    ${conversationHistory}
     
     BEHAVIOR GUIDELINES:
     ${behaviorRules}
@@ -116,16 +147,31 @@ async function prepareContent(
 export async function generateGeminiResponse(
   message: string,
   emotionalTone: string = 'neutral',
-  memoryContext: string = '',
-  behaviorRules: string = ''
+  memoryContext: any = null,
+  behaviorRules: string = '',
+  previousMessages: any[] = []
 ): Promise<string> {
   try {
+    console.log('Starting Gemini response generation...');
     const apiKey = await getApiKey();
     const url = `${GEMINI_ENDPOINT}?key=${apiKey}`;
     
-    // Prepare content with context from all sources
-    const requestContent = await prepareContent(message, emotionalTone, memoryContext, behaviorRules);
+    // Log memory and conversation stats for debugging
+    if (memoryContext) {
+      console.log(`Memory context provided: ${typeof memoryContext === 'string' ? 'string' : 'object'}`);
+      if (typeof memoryContext !== 'string') {
+        console.log(`Memory topics count: ${memoryContext.topics ? Object.keys(memoryContext.topics).length : 0}`);
+      }
+    }
     
+    if (previousMessages && previousMessages.length > 0) {
+      console.log(`Previous messages provided: ${previousMessages.length}`);
+    }
+    
+    // Prepare content with context from all sources
+    const requestContent = await prepareContent(message, emotionalTone, memoryContext, behaviorRules, previousMessages);
+    
+    console.log('Sending request to Gemini API...');
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -140,12 +186,15 @@ export async function generateGeminiResponse(
     }
     
     const data: GeminiResponse = await response.json();
+    console.log('Received response from Gemini API');
     
     if (data.candidates && data.candidates.length > 0 && 
         data.candidates[0].content && 
         data.candidates[0].content.parts && 
         data.candidates[0].content.parts.length > 0) {
-      return data.candidates[0].content.parts[0].text;
+      const responseText = data.candidates[0].content.parts[0].text;
+      console.log(`Generated response (${responseText.length} chars)`);
+      return responseText;
     } else {
       throw new Error("Invalid response format from Gemini API");
     }

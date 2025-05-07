@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet';
 import AdminLogin from '@/components/AdminLogin';
-import AdminDashboard from '@/components/AdminDashboard';
+import Dashboard from '@/components/admin/Dashboard';
 
 const AdminPanel: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -52,7 +52,7 @@ const AdminPanel: React.FC = () => {
             </div>
             
             <div className="p-6 bg-terminal-bg">
-              {isAuthenticated ? <AdminDashboard /> : <AdminLogin onSuccess={handleLoginSuccess} />}
+              {isAuthenticated ? <Dashboard /> : <AdminLogin onSuccess={handleLoginSuccess} />}
             </div>
           </div>
         </motion.div>
