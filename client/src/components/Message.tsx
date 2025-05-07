@@ -55,9 +55,9 @@ const Message: React.FC<MessageProps> = ({ message, isLast }) => {
       </div>
       <div 
         ref={textRef}
-        className="text-terminal-text whitespace-pre-wrap break-words flex-1 min-w-0 text-sm sm:text-base pr-2"
+        className="text-terminal-text whitespace-pre-wrap break-words flex-1 min-w-0 text-sm sm:text-base pr-2 pl-1 sm:pl-2"
       >
-        {displayText}
+        <span className="inline-block min-w-[1ch] overflow-visible">{displayText}</span>
         {isTyping && (
           <span className="cursor ml-1 inline-block w-2 h-4 bg-terminal-text animate-blink"></span>
         )}

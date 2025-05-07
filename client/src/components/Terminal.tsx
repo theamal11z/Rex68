@@ -41,35 +41,46 @@ const Terminal: React.FC = () => {
 
   return (
     <motion.div
-      className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-4xl"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-4xl flex flex-col items-center min-h-screen"
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, ease: 'easeOut' }}
     >
-      <div className="terminal-window">
+      <div className="terminal-window relative w-full max-w-2xl rounded-2xl shadow-2xl border border-terminal-muted bg-terminal-dark/80 backdrop-blur-md overflow-hidden">
         <TerminalHeader />
-        
         <div 
-          className="terminal-content-wrapper flex flex-col"
+          className="terminal-content-wrapper flex flex-col relative"
           style={{
-            backgroundImage: background,
+            backgroundImage: `${background}, linear-gradient(135deg, rgba(30,30,40,0.85) 60%, rgba(80,0,120,0.3))`,
             backgroundSize: 'cover',
             backgroundBlendMode: 'overlay',
-            position: 'relative',
+            minHeight: '500px',
           }}
         >
-          {/* Background overlay */}
+          {/* Gradient overlay */}
           <div 
-            className="absolute inset-0 bg-terminal-bg bg-opacity-85 z-0"
-            style={{ backdropFilter: 'blur(3px)' }}
+            className="absolute inset-0 bg-gradient-to-br from-terminal-bg/90 to-terminal-purple/40 z-0 pointer-events-none"
+            style={{ backdropFilter: 'blur(4px)' }}
           ></div>
-          
+          {/* Manual background cycle button */}
+          <button
+            className="absolute top-3 right-3 z-20 bg-terminal-cyan/80 hover:bg-terminal-purple/80 text-black px-2 py-1 rounded-lg shadow transition-colors focus:outline-none focus:ring-2 focus:ring-terminal-orange"
+            title="Change background"
+            onClick={() => {
+              const currentIndex = BACKGROUNDS.indexOf(background);
+              setBackground(BACKGROUNDS[(currentIndex + 1) % BACKGROUNDS.length]);
+            }}
+            aria-label="Change background"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a9 9 0 1012.364 0M12 2v10" /></svg>
+          </button>
           <TerminalContent messages={messages} loading={loading} />
           <TerminalInput onSendMessage={handleSendMessage} disabled={loading} />
         </div>
       </div>
-      
-      <SocialLinks />
+      <div className="mt-4 w-full flex justify-center">
+        <SocialLinks />
+      </div>
     </motion.div>
   );
 };

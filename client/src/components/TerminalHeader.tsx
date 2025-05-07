@@ -12,14 +12,14 @@ const TerminalHeader: React.FC = () => {
   }, []);
 
   return (
-    <div className="terminal-header flex items-center justify-between p-2">
+    <div className="terminal-header flex items-center justify-between px-4 py-2 bg-terminal-dark/70 backdrop-blur-md rounded-t-2xl shadow-md border-b border-terminal-muted">
       <div className="flex space-x-2">
-        <div className="w-3 h-3 rounded-full bg-terminal-orange"></div>
-        <div className="w-3 h-3 rounded-full bg-terminal-green"></div>
-        <div className="w-3 h-3 rounded-full bg-terminal-cyan"></div>
+        <div className="w-3 h-3 rounded-full bg-terminal-orange hover:scale-110 hover:bg-orange-400 transition-transform duration-150 cursor-pointer shadow"></div>
+        <div className="w-3 h-3 rounded-full bg-terminal-green hover:scale-110 hover:bg-green-400 transition-transform duration-150 cursor-pointer shadow"></div>
+        <div className="w-3 h-3 rounded-full bg-terminal-cyan hover:scale-110 hover:bg-cyan-400 transition-transform duration-150 cursor-pointer shadow"></div>
       </div>
-      <div className="text-sm text-terminal-text font-mono">
-        Mohsin's Terminal • {time.toLocaleTimeString()}
+      <div className="text-base text-terminal-cyan font-mono font-semibold drop-shadow">
+        Mohsin's Terminal • <span className="text-terminal-text font-normal">{time.toLocaleTimeString()}</span>
       </div>
       <div className="w-6">
         {/* Placeholder to ensure the header is balanced */}
