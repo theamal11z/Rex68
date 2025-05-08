@@ -28,7 +28,7 @@ const EditMemoryDialog: React.FC<EditMemoryDialogProps> = ({ open, onOpenChange,
       await handleEditMemory(memory, updatedContext);
       onOpenChange(false);
     } catch (err) {
-      toast({
+      toast.toast({
         title: "Error",
         description: "Invalid JSON",
         variant: "destructive",
