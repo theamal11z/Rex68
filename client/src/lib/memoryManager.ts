@@ -365,3 +365,22 @@ export function getRelevantMemories(
   
   return relevantMemory;
 }
+
+/**
+ * Computes a health score [0-1] for a memory based on recency and topic relevance
+ */
+export function calculateMemoryHealth(memoryContext: StructuredMemory): number {
+  const now = new Date();
+  const last = new Date(memoryContext.lastInteraction || now.toISOString());
+  const daysSince = (now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24);
+  // Recency factor decays exponentially
+  const recencyFactor = Math.pow(MEMORY_DECAY_RATE, daysSince);
+  // Average topic relevance
+  const topics = memoryContext.topics || {};
+  const avgRelevance =
+    Object.values(topics).reduce((sum, t) => sum + (t.relevance || 0), 0) /
+    (Object.keys(topics).length || 1);
+  // Health is average of recency and relevance
+  const health = (recencyFactor + avgRelevance) / 2;
+  return Math.max(0, Math.min(1, health));
+}

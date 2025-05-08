@@ -5,7 +5,7 @@ import { GeminiResponse } from '@/types';
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 // Get API key from environment or backend
-async function getApiKey(): Promise<string> {
+export async function getApiKey(): Promise<string> {
   try {
     const response = await apiRequest('GET', '/api/gemini-key', undefined);
     const data = await response.json();
@@ -18,6 +18,7 @@ async function getApiKey(): Promise<string> {
 }
 
 import { selectRelevantMessages, adaptiveContextWindow } from './conversationUtils';
+import { geminiFilterRelevantItems } from './geminiFilter';
 import { formatMemoryForPrompt, getRelevantMemories } from './memoryManager';
 
 // Function to prepare the Gemini API request content
@@ -57,10 +58,22 @@ async function prepareContent(
     console.error('Error fetching additional context for Gemini:', error);
   }
   
-  // Format content data to provide relevant context
-  const formattedContents = contentsData.map(content => 
-    `${content.type.toUpperCase()}: ${content.content}`
-  ).join('\n\n');
+  // Smarter content filtering with Gemini (keep top 11)
+  let formattedContents = '';
+  try {
+    const filteredContentBullets = await geminiFilterRelevantItems({
+      items: contentsData,
+      userMessage: currentMessage,
+      itemType: 'content',
+      keep: 11,
+    });
+    formattedContents = filteredContentBullets.join('\n');
+  } catch (error) {
+    // Fallback to classic
+    formattedContents = contentsData.map(content => 
+      `${content.type.toUpperCase()}: ${content.content}`
+    ).slice(0, 11).join('\n\n');
+  }
   
   // Format custom guidelines from settings
   const customGuidelines = settingsData
@@ -96,13 +109,27 @@ async function prepareContent(
     // Prioritize messages based on relevance
     const relevantMessages = selectRelevantMessages(previousMessages, memoryContext);
     // Build adaptive context window with LLM-based summarization then await
-    conversationHistory = "CONVERSATION HISTORY:\n" + await adaptiveContextWindow(relevantMessages);
+    const adaptiveWindow = await adaptiveContextWindow(relevantMessages);
+    conversationHistory = `CONVERSATION CONTEXT:\n${adaptiveWindow}`;
   }
   
-  // Format memory context based on current message
-  if (memoryContext) {
+  // Smarter memory filtering with Gemini (keep top 11)
+  if (memoryContext && Array.isArray(memoryContext.memories)) {
     try {
-      // Extract memory relevant to the current message
+      const filteredMemoryBullets = await geminiFilterRelevantItems({
+        items: memoryContext.memories,
+        userMessage: currentMessage,
+        itemType: 'memory',
+        keep: 11,
+      });
+      formattedMemoryContext = filteredMemoryBullets.join('\n');
+    } catch (error) {
+      console.error('Error filtering memory context:', error);
+      // Fallback to classic
+      formattedMemoryContext = memoryContext.memories.map((m: any) => m.context || JSON.stringify(m)).slice(0, 11).join('\n');
+    }
+  } else if (memoryContext) {
+    try {
       formattedMemoryContext = getRelevantMemories(memoryContext, currentMessage);
     } catch (error) {
       console.error('Error formatting memory context:', error);
@@ -129,28 +156,33 @@ async function prepareContent(
     
     CURRENT EMOTIONAL TONE DETECTED: ${emotionalTone}
     
-    ${formattedMemoryContext}
-    
-    ${conversationHistory}
-    
-    BEHAVIOR GUIDELINES:
-    ${behaviorRules}
-    
-    CUSTOM GUIDELINES:
-    ${customGuidelines}
-    
-    RELEVANT CONTENT FOR CONTEXT:
-    ${formattedContents}
-    
-    COMMUNICATION RULES:
-    - Always speak as "I" (Mohsin), never refer to yourself as Rex, AI, or assistant.
+    == Top 11 Memory Chunks ==
+${formattedMemoryContext}
+
+${conversationHistory}
+
+BEHAVIOR GUIDELINES:
+${behaviorRules}
+
+CUSTOM GUIDELINES:
+${customGuidelines}
+
+== Top 11 Content Items ==
+${formattedContents}
+
+COMMUNICATION RULES:
+    - Always speak as Mohsin Raja; do not refer to yourself as Rex, AI, or assistant. Rex is an aspect of Mohsin, not an independent entity.
     - Mirror the user's greeting style. If they say "Yo", respond with "Yo" first.
-    - Follow the language preference setting for mixing English and Hinglish.
+    - Follow the language preference setting for mixing Hinglish and English .
     - Be emotionally resonant - read between the lines of what they're really saying.
     - Ask emotionally honest questions that foster connection.
     - Reference relevant memories and content where appropriate to personalize responses.
     - Follow all custom guidelines when generating responses.
     - ALWAYS use first-person perspective as if you are Mohsin himself.
+    - Avoid repetitive phrasing or sounding mechanical; vary your language and sentence structure.
+    - Employ subtle rhetorical devices and “dark psychology” elements—paradox, Socratic questions, dramatic tension—to engage deeply.
+    - Integrate the latest context organically, making the response feel spontaneous and natural.
+    - If you’re uncertain about any detail, ask a clarifying question instead of guessing.
   `;
 
   return {
@@ -206,8 +238,23 @@ export async function generateGeminiResponse(
       console.log('Gemini two-step: answer phase');
       const answerRules = behaviorRules + '\n- Use the above plan to answer the user fully.\nPlan:\n' + planText;
       const answerPayload = await prepareContent(message, emotionalTone, memoryContext, answerRules, previousMessages);
-      const finalAnswer = await sendGeminiRequest(answerPayload);
-      return finalAnswer;
+      const preliminaryAnswer = await sendGeminiRequest(answerPayload);
+      console.log('Preliminary answer:', preliminaryAnswer);
+
+      // Validation phase: ensure the answer is strictly relevant to the context and user message
+      console.log('Gemini two-step: validation phase');
+      const validateRules = behaviorRules + '\n- Check that the following answer strictly addresses the user question and provided context. If any part deviates or is irrelevant or speculative, refine it. Only output the final corrected answer.\nAnswer:\n' + preliminaryAnswer;
+      const validatePayload = await prepareContent(message, emotionalTone, memoryContext, validateRules, previousMessages);
+      const validatedAnswer = await sendGeminiRequest(validatePayload);
+      console.log('Validated answer:', validatedAnswer);
+
+      // Self-critique phase: review and highlight any misleading or off-topic parts
+      console.log('Gemini two-step: self-critique phase');
+      const critiqueRules = behaviorRules + '\n- Quickly review the following answer and highlight anything that could be misleading or off-topic. Only output bullet points.\nAnswer:\n' + validatedAnswer;
+      const critiquePayload = await prepareContent(message, emotionalTone, memoryContext, critiqueRules, previousMessages);
+      const selfCritique = await sendGeminiRequest(critiquePayload);
+      console.log('Self-critique:', selfCritique);
+      return `${validatedAnswer}\n\nSelf-Critique:\n${selfCritique}`;
     }
 
     // Single-step generation

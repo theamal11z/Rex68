@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { apiRequest } from '@/lib/queryClient';
 import { Memory, Setting, Content, Message } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { calculateMemoryHealth } from '@/lib/memoryManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Import tab components
@@ -382,6 +383,29 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Edit Memory handler
+  const handleEditMemory = async (memory: Memory, updatedContext: any) => {
+    try {
+      const response = await apiRequest('PATCH', `/api/memory/${memory.id}`, { context: updatedContext });
+      const updatedMemory = await response.json();
+      setMemories(memories.map(m => m.id === memory.id ? updatedMemory : m));
+      toast({ title: "Success", description: "Memory updated successfully" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update memory", variant: "destructive" });
+    }
+  };
+
+  // Delete Memory handler
+  const handleDeleteMemory = async (memoryId: number) => {
+    try {
+      await apiRequest('DELETE', `/api/memory/${memoryId}`, undefined);
+      setMemories(memories.filter(m => m.id !== memoryId));
+      toast({ title: "Success", description: "Memory deleted successfully" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete memory", variant: "destructive" });
+    }
+  };
+
   // Dialog handlers
   const openEditDialog = (setting: Setting) => {
     setCurrentSetting(setting);
@@ -606,7 +630,9 @@ const Dashboard: React.FC = () => {
   const memoryTabProps = {
     ...tabProps,
     memories,
-    createMemory
+    createMemory,
+    handleEditMemory,
+    handleDeleteMemory
   };
 
   const conversationsTabProps = {

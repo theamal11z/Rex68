@@ -236,7 +236,7 @@ export async function adaptiveContextWindow(messages: Message[]): Promise<string
   const longTermText = longTerm.map(formatMessageForCompression).join('\n');
   const summary = await generateAbstractiveSummary(longTermText);
   
-  let output = '== Long-Term Summary ==\n' + summary + '\n\n';
-  output += '== Recent Messages ==\n' + shortTerm.map(formatMessageForCompression).join('\n');
+  let output = '== Older (compressed) Conversation ==\n' + summary + '\n\n';
+  output += '== Recent (uncompressed) Conversation ==\n' + shortTerm.map(formatMessageForCompression).join('\n');
   return output;
 }
