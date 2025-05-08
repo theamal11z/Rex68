@@ -19,9 +19,10 @@ const Message: React.FC<MessageProps> = ({ message, isLast }) => {
       return;
     }
 
-    let index = 0;
+    // Fix: Show first character immediately and start typing from index 1
+    let index = 1;
     setIsTyping(true);
-    setDisplayText('');
+    setDisplayText(message.content.charAt(0) || '');
 
     const typingInterval = setInterval(() => {
       if (index < message.content.length) {
