@@ -6,6 +6,81 @@ import { insertMessageSchema, insertMemorySchema, insertSettingSchema, insertCon
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // --- Trigger Phrases API ---
+  // Get all trigger phrases
+  app.get("/api/trigger-phrases", async (req: Request, res: Response) => {
+    try {
+      const triggers = await storage.getAllTriggerPhrases();
+      res.json(triggers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve trigger phrases" });
+    }
+  });
+
+  // Get trigger phrase by id
+  app.get("/api/trigger-phrases/:id", async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const trigger = await storage.getTriggerPhraseById(id);
+      if (!trigger) return res.status(404).json({ message: "Not found" });
+      res.json(trigger);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve trigger phrase" });
+    }
+  });
+
+  // Get trigger phrase by phrase
+  app.get("/api/trigger-phrases/phrase/:phrase", async (req: Request, res: Response) => {
+    try {
+      const phrase = decodeURIComponent(req.params.phrase);
+      const trigger = await storage.getTriggerPhraseByPhrase(phrase);
+      if (!trigger) return res.status(404).json({ message: "Not found" });
+      res.json(trigger);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve trigger phrase" });
+    }
+  });
+
+  // Create trigger phrase
+  app.post("/api/trigger-phrases", async (req: Request, res: Response) => {
+    try {
+      const { phrase, guidelines, personality, examples = '', active = 1, identity = '', purpose = '', audience = '', task = '' } = req.body;
+      if (!phrase || !guidelines || !personality) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      const created = await storage.createTriggerPhrase({ phrase, guidelines, personality, examples, active, identity, purpose, audience, task });
+      res.status(201).json(created);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create trigger phrase" });
+    }
+  });
+
+  // Update trigger phrase
+  app.put("/api/trigger-phrases/:id", async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const { phrase, guidelines, personality, examples = '', active = 1, identity = '', purpose = '', audience = '', task = '' } = req.body;
+      const updates = { phrase, guidelines, personality, examples, active, identity, purpose, audience, task };
+      const updated = await storage.updateTriggerPhrase(id, updates);
+      if (!updated) return res.status(404).json({ message: "Not found" });
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update trigger phrase" });
+    }
+  });
+
+  // Delete trigger phrase
+  app.delete("/api/trigger-phrases/:id", async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const deleted = await storage.deleteTriggerPhrase(id);
+      if (!deleted) return res.status(404).json({ message: "Not found" });
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete trigger phrase" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Endpoint to get Gemini API key

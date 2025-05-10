@@ -54,6 +54,35 @@ export const contents = pgTable("contents", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
+// Trigger phrase schema for admin-defined modes
+export const triggerPhrases = pgTable("trigger_phrases", {
+  id: serial("id").primaryKey(),
+  phrase: text("phrase").notNull().unique(),
+  guidelines: text("guidelines").notNull(),
+  personality: text("personality").notNull(),
+  examples: text("examples").default(''),
+  active: integer("active").default(1), // 1 for active, 0 for inactive
+  identity: text("identity").default(''), // Who am I?
+  purpose: text("purpose").default(''), // What is my purpose?
+  audience: text("audience").default(''), // Who am I talking to?
+  task: text("task").default(''), // What is my task?
+});
+
+export const insertTriggerPhraseSchema = createInsertSchema(triggerPhrases).pick({
+  phrase: true,
+  guidelines: true,
+  personality: true,
+  examples: true,
+  active: true,
+  identity: true,
+  purpose: true,
+  audience: true,
+  task: true,
+});
+
+export type InsertTriggerPhrase = z.infer<typeof insertTriggerPhraseSchema>;
+export type TriggerPhrase = typeof triggerPhrases.$inferSelect;
+
 export const insertContentSchema = createInsertSchema(contents).pick({
   type: true,
   content: true,

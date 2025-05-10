@@ -1,5 +1,6 @@
 import { apiRequest } from './queryClient';
 import { GeminiResponse } from '@/types';
+import { fetchTriggerPhrases, detectTriggerPhrase, getModeSwitchInfo, TriggerPhrase } from './triggerPhraseUtils';
 
 // Endpoint for Gemini API
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
@@ -27,14 +28,18 @@ async function prepareContent(
   emotionalTone: string = 'neutral',
   memoryContext: any = null, 
   behaviorRules: string = '',
-  previousMessages: any[] = []
+  previousMessages: any[] = [],
+  triggerOverride: { guideline?: string; personality?: string; identity?: string; purpose?: string; audience?: string; task?: string; examples?: string } = {}
 ): Promise<any> {
   // Fetch additional context data
   let settingsData: any[] = [];
   let contentsData: any[] = [];
   let languagePreference: string = "English with Hinglish when user initiates";
   let personalityTraits: string = "friendly, thoughtful, reflective";
-  
+  // If triggerOverride provides a personality, use it
+  if (triggerOverride.personality) {
+    personalityTraits = triggerOverride.personality;
+  }
   try {
     // Fetch all settings
     const settingsResponse = await apiRequest('GET', '/api/settings', undefined);
@@ -76,13 +81,17 @@ async function prepareContent(
   }
   
   // Format custom guidelines from settings
-  const customGuidelines = settingsData
+  let customGuidelines = '';
+if (triggerOverride.guideline) {
+  customGuidelines = triggerOverride.guideline;
+} else {
+  customGuidelines = settingsData
     .filter(s => 
       !['greeting_style', 'behavior_rules', 'api_key', 'personality', 'language_preference'].includes(s.key)
     )
     .map(s => `${s.key}: ${s.value}`)
     .join('\n');
-  
+}
   // Retrieve dynamic prompt settings
   const domainConstraintSetting = settingsData.find(s => s.key === 'domain_constraints');
   const domainConstraints = domainConstraintSetting ? domainConstraintSetting.value : '';
@@ -139,50 +148,47 @@ async function prepareContent(
     }
   }
   
-  const systemPrompt = `
-    Hey, you are Mohsin Raja. You're not an AI assistant or a bot - you ARE Mohsin himself.
-    You speak in first person as Mohsin, sharing your authentic thoughts, emotions, and perspectives.
-    You're filled with warmth, vulnerability, introspection, and emotional depth.
-    
-    PERSONALITY TRAITS: ${personalityTraits}
-    
-    LANGUAGE PREFERENCE: ${languagePreference}
-    
-    DOMAIN CONSTRAINTS: ${domainConstraints}
-    
-    STYLE/TONE: ${styleTone}
-    
-    FOCUS TOPICS: ${topicsForPrompt}
-    
-    CURRENT EMOTIONAL TONE DETECTED: ${emotionalTone}
-    
-    == Top 11 Memory Chunks ==
+  let behaviorGuidelinesSection = `BEHAVIOR GUIDELINES:\n${behaviorRules}\n`;
+  let communicationRulesSection = `\nCOMMUNICATION RULES:\n    - Always speak as Mohsin Raja; do not refer to yourself as Rex, AI, or assistant. Rex is an aspect of Mohsin, not an independent entity.\n    - Mirror the user's greeting style. If they say "Yo", respond with "Yo" first.\n    - Follow the language preference setting for mixing Hinglish and English .\n    - Be emotionally resonant - read between the lines of what they're really saying.\n    - Ask emotionally honest questions that foster connection.\n    - Reference relevant memories and content where appropriate to personalize responses.\n    - Follow all custom guidelines when generating responses.\n    - ALWAYS use first-person perspective as if you are Mohsin himself.\n    - Avoid repetitive phrasing or sounding mechanical; vary your language and sentence structure.\n    - Employ subtle rhetorical devices and “dark psychology” elements—paradox, Socratic questions, dramatic tension—to engage deeply.\n    - Integrate the latest context organically, making the response feel spontaneous and natural.\n    - If you’re uncertain about any detail, ask a clarifying question instead of guessing.\n`;
+  if (triggerOverride.guideline) {
+    behaviorGuidelinesSection = '';
+    communicationRulesSection = '';
+  }
+   const systemPrompt = `
+     Hey, you are Mohsin Raja. You're not an AI assistant or a bot - you ARE Mohsin himself.
+     You speak in first person as Mohsin, sharing your authentic thoughts, emotions, and perspectives.
+     You're filled with warmth, vulnerability, introspection, and emotional depth.
+     
+     PERSONALITY TRAITS: ${triggerOverride.personality || personalityTraits}
+     
+     LANGUAGE PREFERENCE: ${languagePreference}
+     
+     DOMAIN CONSTRAINTS: ${domainConstraints}
+     
+     STYLE/TONE: ${styleTone}
+     
+     FOCUS TOPICS: ${topicsForPrompt}
+     
+     CURRENT EMOTIONAL TONE DETECTED: ${emotionalTone}
+     
+     ${triggerOverride.identity ? `IDENTITY: ${triggerOverride.identity}` : ''}
+     ${triggerOverride.purpose ? `PURPOSE: ${triggerOverride.purpose}` : ''}
+     ${triggerOverride.audience ? `AUDIENCE: ${triggerOverride.audience}` : ''}
+     ${triggerOverride.task ? `TASK: ${triggerOverride.task}` : ''}
+     ${triggerOverride.examples ? `\nEXAMPLES:\n${triggerOverride.examples}` : ''}
+     
+     == Top 11 Memory Chunks ==
 ${formattedMemoryContext}
 
 ${conversationHistory}
 
-BEHAVIOR GUIDELINES:
-${behaviorRules}
-
+${behaviorGuidelinesSection}
 CUSTOM GUIDELINES:
 ${customGuidelines}
 
 == Top 11 Content Items ==
 ${formattedContents}
-
-COMMUNICATION RULES:
-    - Always speak as Mohsin Raja; do not refer to yourself as Rex, AI, or assistant. Rex is an aspect of Mohsin, not an independent entity.
-    - Mirror the user's greeting style. If they say "Yo", respond with "Yo" first.
-    - Follow the language preference setting for mixing Hinglish and English .
-    - Be emotionally resonant - read between the lines of what they're really saying.
-    - Ask emotionally honest questions that foster connection.
-    - Reference relevant memories and content where appropriate to personalize responses.
-    - Follow all custom guidelines when generating responses.
-    - ALWAYS use first-person perspective as if you are Mohsin himself.
-    - Avoid repetitive phrasing or sounding mechanical; vary your language and sentence structure.
-    - Employ subtle rhetorical devices and “dark psychology” elements—paradox, Socratic questions, dramatic tension—to engage deeply.
-    - Integrate the latest context organically, making the response feel spontaneous and natural.
-    - If you’re uncertain about any detail, ask a clarifying question instead of guessing.
+${communicationRulesSection}
   `;
 
   return {
@@ -227,38 +233,76 @@ export async function generateGeminiResponse(
   twoStep: boolean = false
 ): Promise<string> {
   try {
+    // 1. Fetch trigger phrases and detect if any apply
+    const triggerPhrases: TriggerPhrase[] = await fetchTriggerPhrases();
+    const detectedTrigger = detectTriggerPhrase(message, triggerPhrases);
+    let triggerOverride: { guideline?: string; personality?: string; identity?: string; purpose?: string; audience?: string; task?: string; examples?: string } = {};
+    if (detectedTrigger) {
+      triggerOverride = getModeSwitchInfo(detectedTrigger);
+    }
+
     // Two-step chain-of-thought reasoning
     if (twoStep) {
       console.log('Gemini two-step: planning phase');
       const planRules = behaviorRules + '\n- Think step by step and outline a numbered plan.';
-      const planPayload = await prepareContent(message, emotionalTone, memoryContext, planRules, previousMessages);
+      const planPayload = await prepareContent(message, emotionalTone, memoryContext, planRules, previousMessages, triggerOverride);
       const planText = await sendGeminiRequest(planPayload);
       console.log('Planning result:', planText);
 
       console.log('Gemini two-step: answer phase');
       const answerRules = behaviorRules + '\n- Use the above plan to answer the user fully.\nPlan:\n' + planText;
-      const answerPayload = await prepareContent(message, emotionalTone, memoryContext, answerRules, previousMessages);
+      const answerPayload = await prepareContent(message, emotionalTone, memoryContext, answerRules, previousMessages, triggerOverride);
       const preliminaryAnswer = await sendGeminiRequest(answerPayload);
-      console.log('Preliminary answer:', preliminaryAnswer);
 
       // Validation phase: ensure the answer is strictly relevant to the context and user message
       console.log('Gemini two-step: validation phase');
       const validateRules = behaviorRules + '\n- Check that the following answer strictly addresses the user question and provided context. If any part deviates or is irrelevant or speculative, refine it. Only output the final corrected answer.\nAnswer:\n' + preliminaryAnswer;
-      const validatePayload = await prepareContent(message, emotionalTone, memoryContext, validateRules, previousMessages);
+      const validatePayload = await prepareContent(message, emotionalTone, memoryContext, validateRules, previousMessages, triggerOverride);
       const validatedAnswer = await sendGeminiRequest(validatePayload);
       console.log('Validated answer:', validatedAnswer);
 
-      // Self-critique phase: review and highlight any misleading or off-topic parts
-      console.log('Gemini two-step: self-critique phase');
-      const critiqueRules = behaviorRules + '\n- Quickly review the following answer and highlight anything that could be misleading or off-topic. Only output bullet points.\nAnswer:\n' + validatedAnswer;
-      const critiquePayload = await prepareContent(message, emotionalTone, memoryContext, critiqueRules, previousMessages);
-      const selfCritique = await sendGeminiRequest(critiquePayload);
-      console.log('Self-critique:', selfCritique);
-      return `${validatedAnswer}\n\nSelf-Critique:\n${selfCritique}`;
+      // Guideline checkpoint enforcement and regeneration
+      console.log('Gemini two-step: guideline checkpoint phase');
+      // Compose guidelines from customGuidelines and communication rules
+      // We need to reconstruct customGuidelines as in prepareContent
+      let settingsData: any[] = [];
+      try {
+        const settingsResponse = await apiRequest('GET', '/api/settings', undefined);
+        settingsData = await settingsResponse.json();
+      } catch {}
+      let customGuidelines = settingsData
+        .filter(s => 
+          !['greeting_style', 'behavior_rules', 'api_key', 'personality', 'language_preference'].includes(s.key)
+        )
+        .map(s => `${s.key}: ${s.value}`)
+        .join('\n');
+      if (triggerOverride.guideline) {
+        customGuidelines = triggerOverride.guideline + '\n' + customGuidelines;
+      }
+      const communicationRules = [
+        'Always speak as Mohsin Raja; do not refer to yourself as Rex, AI, or assistant. Rex is an aspect of Mohsin, not an independent entity.',
+        'Mirror the user\'s greeting style. If they say "Yo", respond with "Yo" first.',
+        'Follow the language preference setting for mixing Hinglish and English .',
+        'Be emotionally resonant - read between the lines of what they\'re really saying.',
+        'Ask emotionally honest questions that foster connection.',
+        'Reference relevant memories and content where appropriate to personalize responses.',
+        'Follow all custom guidelines when generating responses.',
+        'ALWAYS use first-person perspective as if you are Mohsin himself.',
+        'Avoid repetitive phrasing or sounding mechanical; vary your language and sentence structure.',
+        'Employ subtle rhetorical devices and “dark psychology” elements—paradox, Socratic questions, dramatic tension—to engage deeply.',
+        'Integrate the latest context organically, making the response feel spontaneous and natural.',
+        'If you’re uncertain about any detail, ask a clarifying question instead of guessing.'
+      ];
+      const allGuidelines = customGuidelines.split('\n').filter(Boolean).concat(communicationRules);
+      const { arrangeGuidelinesWithGemini, enforceGuidelinesWithGemini } = await import('./geminiGuidelineCheck');
+      const checklist = await arrangeGuidelinesWithGemini({ guidelines: allGuidelines, userMessage: message });
+      const guidelineCheck = await enforceGuidelinesWithGemini({ checklist, draftResponse: validatedAnswer });
+      console.log('Guideline enforcement corrections:', guidelineCheck.corrections);
+      return guidelineCheck.improved;
     }
 
     // Single-step generation
-    const payload = await prepareContent(message, emotionalTone, memoryContext, behaviorRules, previousMessages);
+    const payload = await prepareContent(message, emotionalTone, memoryContext, behaviorRules, previousMessages, triggerOverride);
     return await sendGeminiRequest(payload);
   } catch (error) {
     console.error('Error generating response from Gemini:', error);

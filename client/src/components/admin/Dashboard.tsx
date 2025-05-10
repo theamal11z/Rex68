@@ -11,6 +11,7 @@ import LanguageTab from './tabs/LanguageTab';
 import ContentTab from './tabs/ContentTab';
 import MemoryTab from './tabs/MemoryTab';
 import ConversationsTab from './tabs/ConversationsTab';
+import TriggerPhrasesTab from './tabs/TriggerPhrasesTab';
 
 // Import dialog components
 import EditSettingDialog from './dialogs/EditSettingDialog';
@@ -686,7 +687,7 @@ const Dashboard: React.FC = () => {
         <div className="text-terminal-muted">Loading configuration data...</div>
       ) : (
         <Tabs defaultValue="personality" className="w-full" onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-5 mb-4 bg-terminal-dark border border-terminal-muted">
+           <TabsList className="grid grid-cols-6 mb-4 bg-terminal-dark border border-terminal-muted">
             <TabsTrigger value="personality" className="data-[state=active]:bg-terminal-cyan data-[state=active]:text-black">
               Personality
             </TabsTrigger>
@@ -701,6 +702,9 @@ const Dashboard: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger value="conversations" className="data-[state=active]:bg-terminal-cyan data-[state=active]:text-black">
               Conversations
+            </TabsTrigger>
+            <TabsTrigger value="triggerPhrases" className="data-[state=active]:bg-terminal-cyan data-[state=active]:text-black">
+              Trigger Phrases
             </TabsTrigger>
           </TabsList>
           
@@ -722,6 +726,9 @@ const Dashboard: React.FC = () => {
           
           <TabsContent value="conversations" className="mt-0">
             <ConversationsTab {...conversationsTabProps} />
+          </TabsContent>
+          <TabsContent value="triggerPhrases" className="mt-0">
+            <TriggerPhrasesTab />
           </TabsContent>
         </Tabs>
       )}

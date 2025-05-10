@@ -3,7 +3,10 @@ import {
   messages, type Message, type InsertMessage,
   settings, type Setting, type InsertSetting,
   contents, type Content, type InsertContent,
-  memories, type Memory, type InsertMemory 
+  memories, type Memory, type InsertMemory,
+  triggerPhrases,
+  type TriggerPhrase,
+  type InsertTriggerPhrase
 } from "@shared/schema";
 
 // Storage interface for CRUD operations
@@ -37,6 +40,14 @@ export interface IStorage {
   getMemory(userId: string): Promise<Memory | undefined>;
   createMemory(memory: InsertMemory): Promise<Memory>;
   updateMemory(userId: string, context: object): Promise<Memory | undefined>;
+  
+  // Trigger phrase operations
+  getAllTriggerPhrases(): Promise<TriggerPhrase[]>;
+  getTriggerPhraseById(id: number): Promise<TriggerPhrase | undefined>;
+  getTriggerPhraseByPhrase(phrase: string): Promise<TriggerPhrase | undefined>;
+  createTriggerPhrase(trigger: InsertTriggerPhrase): Promise<TriggerPhrase>;
+  updateTriggerPhrase(id: number, updates: Partial<InsertTriggerPhrase>): Promise<TriggerPhrase | undefined>;
+  deleteTriggerPhrase(id: number): Promise<boolean>;
 }
 
 // In-memory implementation of the storage interface
@@ -46,11 +57,13 @@ export class MemStorage implements IStorage {
   private settings: Map<string, Setting>;
   private contents: Content[];
   private memories: Map<string, Memory>;
+  private triggerPhrases: TriggerPhrase[];
   private userIdCounter: number;
   private messageIdCounter: number;
   private settingIdCounter: number;
   private contentIdCounter: number;
   private memoryIdCounter: number;
+  private triggerPhraseIdCounter: number;
 
   constructor() {
     this.users = new Map();
@@ -58,11 +71,13 @@ export class MemStorage implements IStorage {
     this.settings = new Map();
     this.contents = [];
     this.memories = new Map();
+    this.triggerPhrases = [];
     this.userIdCounter = 1;
     this.messageIdCounter = 1;
     this.settingIdCounter = 1;
     this.contentIdCounter = 1;
     this.memoryIdCounter = 1;
+    this.triggerPhraseIdCounter = 1;
     
     // Initialize with default settings
     this.initializeDefaultSettings();
@@ -218,6 +233,58 @@ export class MemStorage implements IStorage {
     this.memories.set(userId, memory);
     return memory;
   }
+
+  // Trigger phrase operations
+  async getAllTriggerPhrases(): Promise<TriggerPhrase[]> {
+    return this.triggerPhrases;
+  }
+
+  async getTriggerPhraseById(id: number): Promise<TriggerPhrase | undefined> {
+    return this.triggerPhrases.find(tp => tp.id === id);
+  }
+
+  async getTriggerPhraseByPhrase(phrase: string): Promise<TriggerPhrase | undefined> {
+    return this.triggerPhrases.find(tp => tp.phrase === phrase);
+  }
+
+  async createTriggerPhrase(trigger: InsertTriggerPhrase): Promise<TriggerPhrase> {
+    const id = this.triggerPhraseIdCounter++;
+    const newTrigger = {
+      ...trigger,
+      id,
+      identity: trigger.identity ?? '',
+      purpose: trigger.purpose ?? '',
+      audience: trigger.audience ?? '',
+      task: trigger.task ?? '',
+      examples: trigger.examples ?? '',
+      active: typeof trigger.active === 'number' ? trigger.active : 1,
+    };
+    this.triggerPhrases.push(newTrigger);
+    return newTrigger;
+  }
+
+  async updateTriggerPhrase(id: number, updates: Partial<InsertTriggerPhrase>): Promise<TriggerPhrase | undefined> {
+    const idx = this.triggerPhrases.findIndex(tp => tp.id === id);
+    if (idx === -1) return undefined;
+    const updated = {
+      ...this.triggerPhrases[idx],
+      ...updates,
+      identity: updates.identity ?? this.triggerPhrases[idx].identity ?? '',
+      purpose: updates.purpose ?? this.triggerPhrases[idx].purpose ?? '',
+      audience: updates.audience ?? this.triggerPhrases[idx].audience ?? '',
+      task: updates.task ?? this.triggerPhrases[idx].task ?? '',
+      examples: updates.examples ?? this.triggerPhrases[idx].examples ?? '',
+      active: typeof updates.active === 'number' ? updates.active : this.triggerPhrases[idx].active ?? 1,
+    };
+    this.triggerPhrases[idx] = updated;
+    return updated;
+  }
+
+  async deleteTriggerPhrase(id: number): Promise<boolean> {
+    const initialLength = this.triggerPhrases.length;
+    this.triggerPhrases = this.triggerPhrases.filter(tp => tp.id !== id);
+    return this.triggerPhrases.length < initialLength;
+  }
 }
 
 // Database implementation of the storage interface
@@ -225,6 +292,36 @@ import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
+  // Trigger phrase operations
+  async getAllTriggerPhrases(): Promise<TriggerPhrase[]> {
+    return await db.select().from(triggerPhrases);
+  }
+
+  async getTriggerPhraseById(id: number): Promise<TriggerPhrase | undefined> {
+    const [trigger] = await db.select().from(triggerPhrases).where(eq(triggerPhrases.id, id));
+    return trigger;
+  }
+
+  async getTriggerPhraseByPhrase(phrase: string): Promise<TriggerPhrase | undefined> {
+    const [trigger] = await db.select().from(triggerPhrases).where(eq(triggerPhrases.phrase, phrase));
+    return trigger;
+  }
+
+  async createTriggerPhrase(trigger: InsertTriggerPhrase): Promise<TriggerPhrase> {
+    const [newTrigger] = await db.insert(triggerPhrases).values(trigger).returning();
+    return newTrigger;
+  }
+
+  async updateTriggerPhrase(id: number, updates: Partial<InsertTriggerPhrase>): Promise<TriggerPhrase | undefined> {
+    const [updated] = await db.update(triggerPhrases).set(updates).where(eq(triggerPhrases.id, id)).returning();
+    return updated;
+  }
+
+  async deleteTriggerPhrase(id: number): Promise<boolean> {
+    const deleted = await db.delete(triggerPhrases).where(eq(triggerPhrases.id, id)).returning();
+    return deleted.length > 0;
+  }
+
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
