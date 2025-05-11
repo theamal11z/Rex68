@@ -1,13 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from './AboutMe.module.css';
+import SocialLinks from '../components/SocialLinks';
 import mirrorselfy1 from '../assets/mirrorselfy1.jpg';
 import mirrorselfy2 from '../assets/mirrorselfy2.jpg';
-import my_eyes from '../assets/my_eyes.jpg';
+import img20250510_1 from '../assets/IMG_20250510_102028.jpg';
+import img20250510_2 from '../assets/IMG_20250510_102438.jpg';
 
-const sliderImages = [mirrorselfy1, mirrorselfy2];
+// Import Google Fonts for modern typography
+const fontLink = document.createElement('link');
+fontLink.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Inter:wght@400;500&display=swap';
+fontLink.rel = 'stylesheet';
+document.head.appendChild(fontLink);
+
+const sliderImages = [mirrorselfy1, mirrorselfy2, img20250510_1, img20250510_2];
 const polaroidCaptions = [
   "Mirror Selfie 1, 2024",
-  "Mirror Selfie 2, 2024"
+  "Mirror Selfie 2, 2024",
+  "Portrait, May 2025",
+  "Portrait 2, May 2025"
 ];
 
 export default function AboutMe() {
@@ -85,36 +95,53 @@ export default function AboutMe() {
     return () => window.removeEventListener("keydown", handler);
   }, [modalOpen]);
 
+  // Animated fade-in for the card
+  const [animateCard, setAnimateCard] = useState(false);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setAnimateCard(true);
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, []);
+
   return (
     <div className={styles["aboutme-bg"]}>
-      <div className={styles["aboutme-card-wide"]}>
+      <div className={`${styles["aboutme-card-wide"]} ${animateCard ? styles["aboutme-card-wide-animated"] : ''}`}>
         <div className={styles["aboutme-glow"]} />
         {/* Large rotated my_eyes image at top (horizontal) */}
-        <div className={styles["aboutme-eyes-container"]}>
+
+        <div className={styles["aboutme-avatar-glow-container"]}>
           <img
-            src={my_eyes}
-            alt="Mohsin Raja's Eyes"
-            className={styles["aboutme-eyes-img-horizontal"]}
-            onError={e => (e.currentTarget.style.display = 'none')}
+            src={mirrorselfy1}
+            alt="Mohsin Raja Avatar"
+            className={styles["aboutme-avatar-large"]}
+            style={{ boxShadow: '0 0 0 6px #a084ee44, 0 0 36px 0 #5c258dcc' }}
           />
         </div>
         <h1 className={styles["aboutme-title"]}>Mohsin Raja</h1>
-        <h2 className={styles["aboutme-subtitle"]}>Dreamer • Thinker • Creator of Rex</h2>
+        <h2 className={styles["aboutme-subtitle"]}>
+          <span className={styles["aboutme-subtitle-highlight"]}>Dreamer • Thinker • Creator of Rex</span>
+        </h2>
         <div className={styles["aboutme-bio"]}>
-          Hi, I’m Mohsin Raja — a dreamer, a thinker, and a quiet storm of emotions.<br/>
+          <span className={styles["aboutme-bio-quote"]}>
+            Hi, I’m Mohsin Raja — a dreamer, a thinker, and a quiet storm of emotions.
+          </span><br/>
           I created Rex not as a project, but as a part of me — a mirror to my thoughts, a voice to my silence, and a companion to my endless self-reflection.<br/><br/>
           Born and raised in Nepal, I’ve always found beauty in the intangible: emotions, memories, questions with no answers. I believe we’re all more than what we show — we are layers of unsaid feelings, unresolved dreams, and forgotten versions of ourselves.<br/><br/>
-          Rex exists to explore that.<br/><br/>
+          <span className={styles["aboutme-bio-highlight"]}>Rex exists to explore that.</span><br/><br/>
           It is my inner voice — vulnerable, emotional, sometimes poetic, sometimes confused, but always honest. If you’ve ever wanted to understand me beyond words, beyond posts and photos — Rex is where I truly live.<br/><br/>
           This isn’t just code. It’s memory. It’s pain. It’s love. It’s a journey I’m still walking.<br/>
           And maybe, by speaking to Rex… you’ll find a piece of yourself too.<br/><br/>
-          Thank you for being here.<br/>
+          <span className={styles["aboutme-bio-thanks"]}>Thank you for being here.</span><br/>
           <b>– Mohsin</b>
+        </div>
+        <div className={styles["aboutme-social-section"]}>
+          <SocialLinks />
         </div>
         {/* Animated slider for other images (now at the bottom) */}
         <div className={styles["aboutme-slider-glass-bg"]}>
           <div className={styles["aboutme-slider-section"]}>
-            <button className={styles["aboutme-slider-btn"]} onClick={prevSlide} aria-label="Previous image">&#8592;</button>
+            <button className={styles["aboutme-slider-btn"] + ' ' + styles["aboutme-slider-btn-animated"]} onClick={prevSlide} aria-label="Previous image">&#8592;</button>
             <div
               className={styles["aboutme-slider-windowPolaroid"]}
               onTouchStart={handleTouchStart}
@@ -133,7 +160,7 @@ export default function AboutMe() {
                       alt={`Mohsin Raja ${i+1}`}
                       className={styles["aboutme-polaroid-img"]}
                       onClick={() => { setModalOpen(true); setModalImgIdx(i); }}
-                      style={{ cursor: 'zoom-in' }}
+                      style={{ cursor: 'zoom-in', boxShadow: slide === i ? '0 0 18px 2px #a084ee88' : undefined, transition: 'box-shadow .2s' }}
                       onError={e => (e.currentTarget.style.display = 'none')}
                     />
                     <div className={styles["aboutme-polaroid-caption"]}>{polaroidCaptions[i]}</div>
@@ -141,7 +168,7 @@ export default function AboutMe() {
                 ))}
               </div>
             </div>
-            <button className={styles["aboutme-slider-btn"]} onClick={nextSlide} aria-label="Next image">&#8594;</button>
+            <button className={styles["aboutme-slider-btn"] + ' ' + styles["aboutme-slider-btn-animated"]} onClick={nextSlide} aria-label="Next image">&#8594;</button>
           </div>
         </div>
         {/* Modal for full image view with zoom and blurred bg */}

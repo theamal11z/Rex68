@@ -25,7 +25,7 @@ const SocialLinks: React.FC = () => {
           <FaGithub className="text-2xl" />
         </a>
         <a
-          href="https://instagram.com/alamal11z"
+          href="https://instagram.com/alamal11x"
           target="_blank"
           rel="noopener noreferrer"
           className="text-terminal-pink hover:text-terminal-purple transition-transform transform hover:scale-110 focus:scale-110 outline-none"
