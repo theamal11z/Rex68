@@ -7,6 +7,7 @@ import Home from "@/pages/Home";
 import AdminPanel from "@/pages/AdminPanel";
 import About from "@/pages/About";
 import AboutMe from "@/pages/AboutMe";
+import TriggerConversation from "@/pages/TriggerConversation";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/aboutme" component={AboutMe} />
       <Route path="/admin" component={AdminPanel} />
+      <Route path="/trigger" component={TriggerConversation} />
       <Route component={NotFound} />
     </Switch>
   );

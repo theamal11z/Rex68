@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useLocation } from 'wouter';
 import TerminalHeader from './TerminalHeader';
 import TerminalContent from './TerminalContent';
 import TerminalInput from './TerminalInput';
 import SocialLinks from './SocialLinks';
 import useConversation from '@/hooks/useConversation';
+import { fetchTriggerPhrases } from '@/lib/triggerPhraseUtils';
 
 // Array of background patterns
 const BACKGROUNDS = [
@@ -17,15 +19,50 @@ const BACKGROUNDS = [
 const Terminal: React.FC = () => {
   const { messages, loading, sendMessage } = useConversation();
   const [background, setBackground] = useState(BACKGROUNDS[0]);
+  const [, setLocation] = useLocation();
+  const [availableTriggers, setAvailableTriggers] = useState<string[]>([]);
 
-  // Check for admin panel trigger
+  // Load available triggers on mount
+  useEffect(() => {
+    const loadTriggers = async () => {
+      try {
+        const triggers = await fetchTriggerPhrases();
+        setAvailableTriggers(triggers.map(t => t.phrase.toLowerCase()));
+      } catch (error) {
+        console.error('Failed to load triggers:', error);
+      }
+    };
+    loadTriggers();
+  }, []);
+
+  // Check for admin panel or trigger command
   const handleSendMessage = (content: string) => {
+    // Check for admin trigger
     if (content.toLowerCase() === "heyopenhereiam") {
       // Navigate to admin panel
       window.location.href = "/admin";
-    } else {
-      sendMessage(content);
+      return;
     }
+    
+    // Check for trigger command format: /trigger triggerName
+    if (content.startsWith('/trigger ')) {
+      const triggerName = content.substring(9).trim().toLowerCase();
+      if (triggerName) {
+        // Check if this is a valid trigger
+        if (availableTriggers.includes(triggerName)) {
+          // Redirect to trigger conversation page with the trigger name as a parameter
+          setLocation(`/trigger?name=${encodeURIComponent(triggerName)}`);
+          return;
+        } else {
+          // Invalid trigger name, send as normal message with a note
+          sendMessage(`${content} (Note: This trigger phrase is not recognized)`);
+          return;
+        }
+      }
+    }
+    
+    // Normal message
+    sendMessage(content);
   };
 
   // Rotate backgrounds periodically

@@ -12,6 +12,12 @@ export interface TriggerPhrase {
   audience?: string;
   task?: string;
   examples?: string;
+  category?: string;     // Optional field for categorizing triggers
+  priority?: number;     // Optional priority level for trigger activation
+  created_at?: string;   // Creation timestamp
+  updated_at?: string;   // Last update timestamp
+  active?: boolean;      // Whether trigger is active
+  metadata?: string;     // Any additional JSON metadata
 }
 
 // Fetch all trigger phrases from the backend
