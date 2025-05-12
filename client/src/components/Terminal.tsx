@@ -78,7 +78,7 @@ const Terminal: React.FC = () => {
 
   return (
     <motion.div
-      className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-4xl flex flex-col items-center min-h-screen"
+      className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-4xl flex flex-col items-center min-h-screen animate-float-terminal"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, ease: 'easeOut' }}

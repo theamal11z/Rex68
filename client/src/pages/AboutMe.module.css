@@ -86,8 +86,8 @@
 .aboutme-subtitle-highlight {
   background: linear-gradient(90deg, #ffe29f 0%, #ffa99f 50%, #a084ee 100%);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
   text-fill-color: transparent;
   font-weight: 700;
   font-family: 'Montserrat', Arial, sans-serif;
@@ -98,13 +98,22 @@
 
 .aboutme-bio {
   color: #fff;
-  font-size: 1.14rem;
-  line-height: 1.7;
-  margin-bottom: 2.2rem;
-  background: rgba(44,34,80,0.13);
-  border-radius: 1.2rem;
-  padding: 1.3rem 1rem 1.3rem 1rem;
-  box-shadow: 0 2px 12px 0 rgba(92,37,141,0.08);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.aboutme-bio-text {
+  color: #e0d8ff;
+  font-size: 1.1rem;
+  line-height: 1.75;
+  background: rgba(44, 34, 80, 0.25);
+  border-radius: 1rem;
+  padding: 1.5rem 1.8rem;
+  box-shadow: 0 4px 18px rgba(26, 19, 51, 0.1);
+  text-align: left;
+  margin: 0 auto;
+  max-width: 700px;
 }
 
 .aboutme-eyes-container {
@@ -165,60 +174,39 @@
   100% { filter: blur(30px) brightness(1.15); }
 }
 
-.aboutme-slider-section {
-  width: 100%;
-  max-width: 520px;
-  margin: 0 auto 2.2rem auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  position: relative;
-  z-index: 2;
-}
-
-.aboutme-slider-windowPolaroid {
+.aboutme-polaroid-pile-container {
   overflow: visible;
-  width: 340px;
-  height: 340px;
-  border-radius: 2.5rem;
+  width: 100%;
+  max-width: 500px;
+  height: 400px;
   background: none;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.aboutme-slider-trackPolaroid {
-  display: flex;
-  transition: transform 0.7s cubic-bezier(.22,1,.36,1);
-  will-change: transform;
-  align-items: center;
-  height: 340px;
+  margin: 0 auto;
 }
 
 .aboutme-polaroid {
   width: 260px;
   height: 320px;
   background: #fff;
-  border-radius: 1.2rem;
-  box-shadow: 0 8px 32px 0 #5c258d44, 0 2px 8px 0 #0002;
-  margin: 0 18px;
-  padding: 1.2rem 1.2rem 2.7rem 1.2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  position: relative;
+  border: 1px solid #0001;
+  padding: 10px 10px 45px 10px;
+  box-shadow: 0 6px 22px 0 rgba(92,37,141,0.18), 0 2px 6px 0 rgba(0,0,0,0.08);
+  position: absolute;
   cursor: pointer;
-  transition: box-shadow .18s, transform .18s;
-  z-index: 1;
+  transition: transform 0.35s cubic-bezier(.22,1,.36,1), 
+              box-shadow 0.35s cubic-bezier(.22,1,.36,1), 
+              z-index 0s 0.01s;
+  will-change: transform, box-shadow;
 }
-.aboutme-polaroid.active {
-  box-shadow: 0 12px 44px 0 #e0c3fc77, 0 2px 8px 0 #0003;
-  transform: scale(1.06) !important;
-  z-index: 2;
+
+.aboutme-polaroid:hover, 
+.aboutme-polaroid.focused {
+  box-shadow: 0 14px 50px 0 rgba(92,37,141,0.3), 0 4px 12px 0 rgba(0,0,0,0.15) !important;
 }
+
 .aboutme-polaroid-img {
   width: 220px;
   height: 220px;
@@ -229,19 +217,23 @@
   box-shadow: 0 2px 14px 0 #5c258d33;
   margin-bottom: 0.7rem;
   transition: transform .18s, box-shadow .18s;
+  cursor: zoom-in;
 }
+
 .aboutme-polaroid-caption {
-  font-family: 'Caveat', cursive, sans-serif;
-  font-size: 1.25rem;
-  color: #5c258d;
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
   text-align: center;
-  margin-top: 0.3rem;
-  letter-spacing: 0.03em;
+  font-size: 0.8rem;
+  color: #333;
+  font-family: 'Caveat', cursive;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
-
-
-
 
 .aboutme-modal-overlay {
   position: fixed;
@@ -316,11 +308,6 @@
   color: #5c258d;
 }
 
-
-@keyframes fadeIn {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
-}
 .aboutme-modal-content {
   position: relative;
   background: rgba(255,255,255,0.05);
@@ -363,28 +350,6 @@
   background: rgba(224,195,252,0.92);
   color: #5c258d;
 }
-
-
-.aboutme-slider-btn {
-  background: linear-gradient(120deg, #e0c3fc 0%, #5c258d 100%);
-  border: none;
-  color: #fff;
-  font-size: 1.8rem;
-  border-radius: 50%;
-  width: 42px;
-  height: 42px;
-  box-shadow: 0 2px 10px #5c258d33;
-  cursor: pointer;
-  transition: background .18s, transform .18s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.aboutme-slider-btn:hover {
-  background: linear-gradient(120deg, #5c258d 0%, #e0c3fc 100%);
-  transform: scale(1.13);
-}
-
 
 .aboutme-glow {
   position: absolute;
@@ -431,35 +396,108 @@
   justify-content: center;
 }
 
-.aboutme-slider-btn-animated {
-  animation: sliderBtnPulse 1.8s infinite alternate;
+.aboutme-section {
+  width: 100%;
+  margin-bottom: 3.5rem;
+  padding: 1rem 0;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInSection 0.8s cubic-bezier(.22,1,.36,1) forwards;
 }
 
-@keyframes sliderBtnPulse {
-  0% { box-shadow: 0 2px 8px 0 #a084ee33; transform: scale(1); }
-  100% { box-shadow: 0 6px 16px 0 #ffa99f44; transform: scale(1.08); }
+.aboutme-section:nth-child(1) { animation-delay: 0.1s; }
+.aboutme-section:nth-child(2) { animation-delay: 0.2s; }
+.aboutme-section:nth-child(3) { animation-delay: 0.4s; }
+.aboutme-section:nth-child(4) { animation-delay: 0.6s; }
+.aboutme-section:nth-child(5) { animation-delay: 0.8s; }
+.aboutme-section:nth-child(6) { animation-delay: 1s; }
+
+@keyframes fadeInSection {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.aboutme-section-hero {
+  margin-bottom: 2rem;
+}
+
+.aboutme-section-essence .aboutme-bio-text {
+  background: rgba(50, 40, 90, 0.35);
+  text-align: center;
+}
+
+.aboutme-section-essence .aboutme-bio-quote {
+  display: block;
+  font-size: 1.25rem;
+  font-style: italic;
+  color: #ffe29f;
+  margin-bottom: 1rem;
+}
+
+.aboutme-section-roots .aboutme-bio-text {
+  background: rgba(35, 28, 70, 0.3);
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.aboutme-section-invitation .aboutme-bio-text {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  color: #fff;
+}
+
+.aboutme-section-invitation .aboutme-bio-highlight {
+  font-size: 1.2rem;
+  display: inline-block;
+  padding: 0.3em 0.6em;
+  border-radius: 0.5em;
+  background-color: rgba(255,255,255,0.1);
+}
+
+.aboutme-section-journey .aboutme-bio-text {
+  text-align: center;
+  background: rgba(50, 40, 90, 0.35);
+}
+
+.aboutme-section-journey .aboutme-bio-thanks {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #e0c3fc;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.aboutme-section-journey b {
+  color: #fff;
+  font-weight: bold;
+}
+
+.aboutme-social-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.aboutme-section-invitation .aboutme-slider-glass-bg {
+  margin-top: 1rem;
 }
 
 @media (max-width: 900px) {
-  .aboutme-slider-section {
-    flex-wrap: nowrap;
-    gap: 0.4rem;
+  .aboutme-polaroid-pile-container {
     max-width: 99vw;
-  }
-  .aboutme-slider-windowPolaroid {
-    width: 98vw;
-    height: 220px;
-    border-radius: 1.3rem;
-  }
-  .aboutme-slider-trackPolaroid {
-    height: 220px;
+    height: 300px;
   }
   .aboutme-polaroid {
     width: 140px;
     height: 170px;
-    border-radius: 0.6rem;
-    margin: 0 6px;
-    padding: 0.6rem 0.6rem 1.1rem 0.6rem;
+    padding: 5px 5px 30px 5px;
   }
   .aboutme-polaroid-img {
     width: 90px;
@@ -469,16 +507,8 @@
     margin-bottom: 0.4rem;
   }
   .aboutme-polaroid-caption {
-    font-size: 0.92rem;
+    font-size: 0.6rem;
     margin-top: 0.11rem;
-  }
-  .aboutme-slider-btn {
-    font-size: 1.5rem;
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
-    box-shadow: 0 4px 16px 0 #a084ee33;
   }
   .aboutme-modal-contentPolaroid {
     padding: 0.5rem 0.1rem 0.5rem 0.1rem;
@@ -505,63 +535,7 @@
   }
 }
 
-  .aboutme-slider-windowPolaroid {
-    width: 98vw;
-    height: 220px;
-    border-radius: 1.3rem;
-  }
-  .aboutme-slider-trackPolaroid {
-    height: 220px;
-  }
-  .aboutme-polaroid {
-    width: 150px;
-    height: 200px;
-    border-radius: 0.6rem;
-    margin: 0 8px;
-    padding: 0.7rem 0.7rem 1.2rem 0.7rem;
-  }
-  .aboutme-polaroid-img {
-    width: 110px;
-    height: 110px;
-    border-radius: 0.5rem;
-    border-width: 2px;
-    margin-bottom: 0.4rem;
-  }
-  .aboutme-polaroid-caption {
-    font-size: 0.97rem;
-    margin-top: 0.13rem;
-  }
-  .aboutme-slider-btn {
-    font-size: 1.3rem;
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
-  }
-  .aboutme-modal-contentPolaroid {
-    padding: 0.5rem 0.1rem 0.5rem 0.1rem;
-    border-radius: 1.2rem;
-    max-width: 99vw;
-    max-height: 99vh;
-  }
-  .aboutme-modal-imgPolaroid {
-    max-width: 98vw;
-    max-height: 40vh;
-    border-radius: 0.7rem;
-    border-width: 2px;
-    margin-bottom: 0.4rem;
-  }
-  .aboutme-modal-arrow {
-    font-size: 2.1rem;
-    width: 40px;
-    height: 40px;
-    top: 46%;
-  }
-  .aboutme-modal-caption {
-    font-size: 1.02rem;
-    margin-top: 0.18rem;
-  }
-
+@media (max-width: 600px) {
   .aboutme-card-wide {
     padding: 1.5rem 0.5rem 1.2rem 0.5rem;
     max-width: 99vw;
@@ -574,108 +548,47 @@
     max-width: 99vw;
     padding: 0.7rem 0;
   }
-  .aboutme-slider-section {
+  .aboutme-polaroid-pile-container {
     max-width: 99vw;
-    gap: 0.4rem;
-  }
-  .aboutme-slider-windowPolaroid {
-    width: 98vw;
-    height: 220px;
-    border-radius: 1.3rem;
-  }
-  .aboutme-slider-trackPolaroid {
-    height: 220px;
+    height: 250px;
   }
   .aboutme-polaroid {
-    width: 150px;
-    height: 200px;
-    border-radius: 0.6rem;
-    margin: 0 8px;
-    padding: 0.7rem 0.7rem 1.2rem 0.7rem;
+    width: 120px;
+    height: 150px;
+    padding: 5px 5px 25px 5px;
   }
   .aboutme-polaroid-img {
-    width: 110px;
-    height: 110px;
+    width: 80px;
+    height: 80px;
     border-radius: 0.5rem;
     border-width: 2px;
     margin-bottom: 0.4rem;
   }
   .aboutme-polaroid-caption {
-    font-size: 0.97rem;
-    margin-top: 0.13rem;
-  }
-  .aboutme-slider-btn {
-    font-size: 1.1rem;
-    width: 32px;
-    height: 32px;
+    font-size: 0.5rem;
+    margin-top: 0.11rem;
   }
   .aboutme-modal-contentPolaroid {
-    padding: 1.1rem 0.3rem 0.8rem 0.3rem;
+    padding: 0.5rem 0.1rem 0.5rem 0.1rem;
     border-radius: 1.2rem;
     max-width: 99vw;
     max-height: 99vh;
   }
   .aboutme-modal-imgPolaroid {
-    max-width: 95vw;
-    max-height: 55vh;
-    border-radius: 1rem;
+    max-width: 98vw;
+    max-height: 40vh;
+    border-radius: 0.7rem;
     border-width: 2px;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
   }
   .aboutme-modal-arrow {
-    font-size: 1.6rem;
-    width: 32px;
-    height: 32px;
+    font-size: 2.1rem;
+    width: 40px;
+    height: 40px;
     top: 46%;
   }
   .aboutme-modal-caption {
     font-size: 1.02rem;
     margin-top: 0.18rem;
   }
-
-@media (max-width: 600px) {
-  .aboutme-card { padding: 1.6rem 0.5rem 1.2rem 0.5rem; }
-  .aboutme-title { font-size: 2rem; }
-  .aboutme-modal-contentPolaroid {
-    padding: 0.5rem 0.1rem 0.5rem 0.1rem;
-    border-radius: 0.7rem;
-    max-width: 100vw;
-    max-height: 100vh;
-    width: 100vw;
-    height: 100vh;
-    box-sizing: border-box;
-  }
-  .aboutme-modal-imgPolaroid {
-    width: 100vw;
-    height: 100vh;
-    object-fit: contain;
-    border-radius: 0;
-    border-width: 0;
-    margin: 0;
-    display: block;
-    background: #111;
-    box-shadow: none;
-  }
-  .aboutme-modal-arrow {
-    font-size: 1.2rem;
-    width: 28px;
-    height: 28px;
-    top: 40%;
-  }
-  .aboutme-modal-close {
-    width: 32px;
-    height: 32px;
-    font-size: 1.5rem;
-    top: 8px;
-    right: 8px;
-  }
-  .aboutme-modal-caption {
-    font-size: 0.97rem;
-    margin-top: 0.13rem;
-    padding: 0 0.4rem;
-    word-break: break-word;
-  }
-  .aboutme-bio { font-size: 1.02rem; padding: 1rem 0.4rem; }
-  .aboutme-gallery-img { width: 70px; height: 70px; }
-  .aboutme-glow { width: 260px; height: 70px; top: -40px; }
 }

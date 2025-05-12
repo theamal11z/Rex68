@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Message from './Message';
+import TypedStaticMessage from './TypedStaticMessage';
 import { Message as MessageType } from '@/types';
 
 interface TerminalContentProps {
@@ -68,14 +69,12 @@ const TerminalContent: React.FC<TerminalContentProps> = ({ messages, loading }) 
           transition={{ duration: 0.8, delay: 1 }}
         >
           <div className="text-terminal-pink mr-2">mohsin@terminal:~$</div>
-          <motion.div 
+          <TypedStaticMessage
+            text="Welcome to my terminal. I'm Mohsin. How can we connect today?"
             className="text-terminal-green font-mono text-base sm:text-lg"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.2, delay: 1.2 }}
-          >
-            Welcome to my terminal. I'm Mohsin. How can we connect today?
-          </motion.div>
+            typingSpeed={30} 
+            cursorClassName="ml-1 inline-block w-2 h-4 bg-terminal-green animate-blink" 
+          />
         </motion.div>
         
         {/* Conversation messages */}

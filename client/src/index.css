@@ -146,3 +146,58 @@
 .font-mono {
   font-family: 'JetBrains Mono', Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+/* Added for terminal redesign */
+
+/* Pulsating Gradient Background for Home.tsx */
+@keyframes pulseGradientBg {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-pulse-gradient-bg {
+  background-size: 200% 200%; /* Make the background larger than the element */
+  animation: pulseGradientBg 15s ease infinite;
+}
+
+/* Breathing/Floating Terminal Window for Terminal.tsx */
+@keyframes floatTerminal {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px); /* Adjust float height */
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float-terminal {
+  animation: floatTerminal 6s ease-in-out infinite;
+}
+
+/* End of added styles for terminal redesign */
+
+/* Animation for input prompt */
+@keyframes pulsePromptText {
+  0%, 100% {
+    opacity: 0.8;
+    text-shadow: 0 0 3px var(--terminal-orange);
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 6px var(--terminal-orange);
+  }
+}
+
+.animate-pulse-prompt {
+  animation: pulsePromptText 2.5s ease-in-out infinite;
+}

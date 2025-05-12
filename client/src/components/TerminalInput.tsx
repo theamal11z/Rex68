@@ -18,8 +18,8 @@ const TerminalInput: React.FC<TerminalInputProps> = ({ onSendMessage, disabled }
   return (
     <div className="bg-terminal-dark/80 p-2 sm:p-3 border-t border-terminal-muted relative z-10 rounded-b-2xl">
       <form className="flex flex-wrap items-center gap-2" onSubmit={e => { e.preventDefault(); if (inputText.trim() && !disabled) { onSendMessage(inputText); setInputText(''); } }}>
-        <div className="text-terminal-orange mr-2 whitespace-nowrap font-mono">user@rex:~$</div>
-        <div className="flex-1 min-w-0 flex items-center bg-terminal-bg/70 rounded-lg px-2 py-1">
+        <div className="text-terminal-orange mr-2 whitespace-nowrap font-mono animate-pulse-prompt">user@rex:~$</div>
+        <div className="flex-1 min-w-0 flex items-center bg-terminal-bg/70 rounded-lg px-2 py-1 transition-all duration-150 focus-within:ring-2 focus-within:ring-terminal-cyan">
           <input
             type="text"
             value={inputText}

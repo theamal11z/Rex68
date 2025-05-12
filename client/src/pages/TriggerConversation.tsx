@@ -64,7 +64,7 @@ export default function TriggerConversation() {
     const trigger = availableTriggers.find(t => t.phrase === value) || null;
     setActiveTrigger(trigger);
     // Show trigger info when changing triggers
-    setShowInfo(true);
+    // setShowInfo(true);
   };
 
   // Handle message submission
