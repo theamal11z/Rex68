@@ -199,5 +199,19 @@
 }
 
 .animate-pulse-prompt {
-  animation: pulsePromptText 2.5s ease-in-out infinite;
+  animation: pulsePromptText 2s ease-in-out infinite;
+}
+
+/* Animation for fadeIn - used in the loading screen */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 1s ease-in-out forwards;
 }
